@@ -20099,6 +20099,10 @@ namespace PreviewDemo
 
         [DllImport(@".\HCNetSDK.dll")]
         public static extern bool NET_DVR_InquestStartCDW_V30(int lUserID,  ref NET_DVR_INQUEST_ROOM lpInquestRoom, bool bNotBurn);
+
+        [DllImport(@".\HCNetSDK.dll")]
+        public static extern bool NET_DVR_CaptureJPEGPicture_WithAppendData(long lUserID,long lChannel, ref NET_DVR_JPEGPICTURE_WITH_APPENDDATA lpJpegWithAppend);
+
         #endregion
 
         #region 消息事件
@@ -20285,6 +20289,35 @@ namespace PreviewDemo
             public byte byCapShutter;/*抓拍时的快门速度，1-1/25; 2-1/50; 3-1/100; 4-1/250;5-1/500; 6-1/1k ;7-1/2k; 8-1/4k; 9-1/10k; 10-1/100k; 11-1/150; 12-1/200*/
             public byte byEnRecognise;/*1-支持识别；0-不支持识别*/
         }
+
+        [StructLayoutAttribute(LayoutKind.Sequential)]
+        public struct NET_DVR_JPEGPICTURE_WITH_APPENDDATA
+        {
+            public uint dwSize;
+            public uint dwChannel;//通道号
+            public uint dwJpegPicLen;//Jpeg图片长度      
+            public IntPtr pJpegPicBuff;//Jpeg图片指针
+            public uint dwJpegPicWidth;  // 图像宽度
+            public uint dwJpegPicHeight;  //图像高度
+            public uint dwP2PDataLen;//全屏测温数据长度
+         
+            public IntPtr pP2PDataBuff; //全屏测温数据指针   
+            public byte byIsFreezedata;//是否数据冻结 0-否 1-是
+            [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 3, ArraySubType = UnmanagedType.I1)]
+            public byte[] byRes1 ;
+            public uint dwVisiblePicLen;//可见光图片长度
+                                        //#if (defined(OS_WINDOWS64) || defined(OS_POSIX64))//win64及linux64下指针为8字节
+                                        //    char    *pVisiblePicBuff;//可见光图片指针
+                                        //#else
+            public IntPtr pVisiblePicBuff;//可见光图片指针
+           // public byte[] byRes2;
+//#endif
+            NET_VCA_RECT struThermalValidRect;//热成像有效区域
+            NET_VCA_RECT struVisibleValidRect;//可见光有效区域
+            [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 208, ArraySubType = UnmanagedType.I1)]
+            public byte[] byRes;
+        }
+
 
         [StructLayoutAttribute(LayoutKind.Sequential)]
         public struct tagCAMERAPARAMCFG

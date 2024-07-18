@@ -16,65 +16,57 @@ namespace PreviewDemo
         [XmlElement(Type = typeof(int), ElementName = "DeviceCount")]
         public int deviceCount = 2;
 
+        #region 设备0
+        //设备名称
+        [XmlElement(Type = typeof(string), ElementName = "DeviceName_0")]
+        public string deviceName_0 = "设备0";
+
+        //IP地址
+        [XmlElement(Type = typeof(string), ElementName = "IP_0")]
+        public string ip_0 = "192.168.1.64";   
+
+        //端口号
+        [XmlElement(Type = typeof(string), ElementName = "PORT_0")]
+        public string port_0 = "8000";
+
+        //用户名
+        [XmlElement(Type = typeof(string), ElementName = "USERNAME_0")]
+        public string username_0 = "admin";
+
+        //密码
+        [XmlElement(Type = typeof(string), ElementName = "PSW_0")]
+        public string psw_0 = "abcd1357";
+
+        // 报警温度
+        [XmlElement(Type = typeof(float), ElementName = "Alarm_0")]
+        public float alarm_0 = 100.0F;
+
+        #endregion
+
         #region 设备1
         //设备名称
         [XmlElement(Type = typeof(string), ElementName = "DeviceName_1")]
         public string deviceName_1 = "设备1";
 
-        //红外相机IP地址
-        [XmlElement(Type = typeof(string), ElementName = "IR_IP_1")]
-        public string ir_ip_1 = "192.168.1.80";
+        //相机IP地址
+        [XmlElement(Type = typeof(string), ElementName = "IP_1")]
+        public string ip_1 = "192.168.1.80";
 
-        //可见光相机IP地址
-        [XmlElement(Type = typeof(string), ElementName = "OP_IP_1")]
-        public string op_ip_1 = "192.168.1.88";
+        //相机端口号
+        [XmlElement(Type = typeof(string), ElementName = "PORT_1")]
+        public string port_1 = "8000";
 
-        //可见光相机端口号
-        [XmlElement(Type = typeof(string), ElementName = "OP_PORT_1")]
-        public string op_port_1 = "8000";
+        //相机用户名
+        [XmlElement(Type = typeof(string), ElementName = "USERNAME_1")]
+        public string username_1 = "admin";
 
-        //可见光相机用户名
-        [XmlElement(Type = typeof(string), ElementName = "OP_USERNAME_1")]
-        public string op_username_1 = "admin";
-
-        //可见光相机用户名
-        [XmlElement(Type = typeof(string), ElementName = "OP_PSW_1")]
-        public string op_psw_1 = "12345";
-
-        // 报警温度
-        [XmlElement(Type = typeof(float), ElementName = "Alarm_1")]
-        public float alarm_1 = 100.0F;
-
-        #endregion
-
-        #region 设备2
-        //设备名称
-        [XmlElement(Type = typeof(string), ElementName = "DeviceName_2")]
-        public string deviceName_2 = "设备2";
-
-        //红外相机IP地址
-        [XmlElement(Type = typeof(string), ElementName = "IR_IP_2")]
-        public string ir_ip_2 = "192.168.1.80";
-
-        //可见光相机IP地址
-        [XmlElement(Type = typeof(string), ElementName = "OP_IP_2")]
-        public string op_ip_2 = "192.168.1.88";
-
-        //可见光相机端口号
-        [XmlElement(Type = typeof(string), ElementName = "OP_PORT_2")]
-        public string op_port_2 = "8000";
-
-        //可见光相机用户名
-        [XmlElement(Type = typeof(string), ElementName = "OP_USERNAME_2")]
-        public string op_username_2 = "admin";
-
-        //可见光相机用户名
-        [XmlElement(Type = typeof(string), ElementName = "OP_PSW_2")]
-        public string op_psw_2 = "12345";
+        //密码
+        [XmlElement(Type = typeof(string), ElementName = "PSW_1")]
+        public string psw_1 = "abcd1357";
 
         // 报警温度
         [XmlElement(Type = typeof(float), ElementName = "Alarm_2")]
-        public float alarm_2 = 100.0F;
+        public float alarm_1 = 100.0F;
 
         #endregion
 

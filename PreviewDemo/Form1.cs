@@ -15,6 +15,8 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Media;
 using System.Drawing.Imaging;
+using System.Diagnostics;
+using OpenCvSharp;
 
 namespace PreviewDemo
 {
@@ -25,16 +27,15 @@ namespace PreviewDemo
         const uint DISPLAYWND_MARGIN_LEFT = 1;//监控画面距离左边控件的距离
         const uint DISPLAYWND_MARGIN_TOP = 1; //监控画面距离上边的距离
         const int PAGE_INDEX = 1000;
-        const Int32 IR_VEDIO_WIDTH = 768;//红外图像视频帧宽度
-        const Int32 IR_VEDIO_HEIGHT = 576;//红外图像视频帧高度
-        const Int32 IR_TEMP_WIDTH = 388;//红外温度帧宽度
-        const Int32 IR_TEMP_HEIGHT = 284;//红外温度帧高度
+        const Int32 IR_IMAGE_WIDTH = 640;//红外图像宽度
+        const Int32 IR_IMAGE_HEIGHT = 512;//红外图像宽度
 
         Color PIC_CLICKED_COLOR = Color.FromArgb(128, 128, 255);
         Color PIC_UNCLICKED_COLOR = Color.FromArgb(45, 45, 53);
         private PictureBox[] pics;//显示图像控件
         private UIPage fmonitor;//监控界面
         private UIPage fbrowse;//浏览界面
+        private UIPage fVehicleData;//过车数据界面
         // private UIPanel pixUIPanel;//容纳PictureBox的Panel
         //public static TransparentLabel[] labels;//图像上面标注控件,背景透明
 
@@ -70,7 +71,7 @@ namespace PreviewDemo
         private bool alertFlag;//报警标志
 
         string recordName;//录制视频文件名
-       // VideoWriter writer;//存储红外视频对象
+                          // VideoWriter writer;//存储红外视频对象
         private bool isInPic;//判断鼠标是否在图像内的标志
 
         string sVideoFileName;
@@ -94,7 +95,29 @@ namespace PreviewDemo
         //public float fSx;//在红外显示控件上画选框，转换成红外视频帧x轴方向的缩放比例
         //public float fSy;//在红外显示控件上画选框，转换成红外视频帧y轴方向的缩放比例
 
+
+        #region 海康mini云台变量
         private bool m_bInitSDK = false;
+        private uint iLastErr = 0;
+        private string str;
+        List<int> mUserIDs = new List<int>();
+        List<string> ipList = new List<string>();//设备ip集合
+        List<int> mRealHandles = new List<int>();
+
+        public CHCNetSDK.NET_DVR_USER_LOGIN_INFO struLogInfo;
+        public CHCNetSDK.NET_DVR_DEVICEINFO_V40 DeviceInfo;
+        List<CHCNetSDK.LOGINRESULTCALLBACK> LoginCallBacks = new List<CHCNetSDK.LOGINRESULTCALLBACK>();
+        List<CHCNetSDK.NET_DVR_DEVICEINFO_V40> DeviceInfos = new List<CHCNetSDK.NET_DVR_DEVICEINFO_V40>();
+        List<CHCNetSDK.REALDATACALLBACK> RealDatas = new List<CHCNetSDK.REALDATACALLBACK>();
+
+        Thread GetImageDataThread;
+        byte cacheDataCount = 0;
+        List<byte>[] cacheData = new List<byte>[20];
+        bool m_bRecord = false;
+        private List<IntPtr> m_ptrRealHandles = new List<IntPtr>();
+        string savePath;
+
+        #endregion
 
 
         public struct TempRuleInfo
@@ -159,8 +182,16 @@ namespace PreviewDemo
             AddPage(fmonitor, pageIndex);
             uiNavBar1.SetNodePageIndex(uiNavBar1.Nodes[0], pageIndex);//设置显示的初始界面为实时监控界面
 
-            uiNavBar1.Nodes.Add("图像浏览");
-            uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[1], 61502);
+            pageIndex++;
+            uiNavBar1.Nodes.Add("过车数据");
+            uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[1], 362008);
+
+            fVehicleData = new FormVehicleData();
+            AddPage(fVehicleData, pageIndex);
+            uiNavBar1.SetNodePageIndex(uiNavBar1.Nodes[1], pageIndex);//添加过车数据界面
+
+            //uiNavBar1.Nodes.Add("图像浏览");
+            //uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[1], 61502);
 
             ////添加图像浏览界面  PAGE_INDEX + 1
             //pageIndex++;
@@ -168,16 +199,22 @@ namespace PreviewDemo
             //AddPage(fbrowse, pageIndex);
             //uiNavBar1.SetNodePageIndex(uiNavBar1.Nodes[1], pageIndex);
 
-            uiNavBar1.Nodes.Add("系统设置");
-            uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[2], 61459);
 
+            uiNavBar1.Nodes.Add("报警数据");
+            uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[2], 62151);
+
+
+
+
+            uiNavBar1.Nodes.Add("系统设置");
+            uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[3], 61459);
 
             //初始化数据
             initDatas();
 
-
             //初始化图像显示控件布局
-            //SetFmonitorDisplayWnds((uint)Globals.systemParam.deviceCount, 2);
+            SetFmonitorDisplayWnds((uint)Globals.systemParam.deviceCount, 2);
+
 
             //获取Fmonitor界面开始采集按钮，并添加相关事件
             startPrewviewBtn = (UISymbolButton)fmonitor.GetControl("startPrewviewBtn");
@@ -248,7 +285,268 @@ namespace PreviewDemo
             //uiNavBar1.SelectedIndex = 0;
             //StartPrewview();
 
+
+            LoginDevice(0, Globals.systemParam.ip_0, Globals.systemParam.username_0, Globals.systemParam.psw_0, Globals.systemParam.port_0, cbLoginCallBack_0);
+
+            Prewview(0, 0, 1, RealDataCallBack_OP_0, false);//预览可见光图像
+
+            Prewview(0, 1, 2, RealDataCallBack_IR_0, false);//预览红外图像
+
+            GetImageDataThread = new Thread(GetImage);
+            GetImageDataThread.IsBackground = true;
+            GetImageDataThread.Start();
+
+            Thread.Sleep(100);
+
+
         }
+
+        public static byte[] IntPtrToByteArray(IntPtr intPtr, int length)
+        {
+            byte[] byteArray = new byte[length];
+            Marshal.Copy(intPtr, byteArray, 0, length);
+            return byteArray;
+        }
+
+
+        private void GetImage()
+        {
+            //录像保存路径和文件名 the path and file name to save
+
+            while (true)
+            {
+                if (isStartPrewview)
+                {
+
+                    if (mUserIDs[0] >= 0)
+                    {
+                        try
+                        {
+                            Stopwatch stopwatch = new Stopwatch();
+                            stopwatch.Start();
+                            //获取当前时间戳
+                            long dateTimeNow = TicksTimeConvert.GetNowTicks13();
+                            byte[] dateTimeNowBytes = new byte[8];
+                            //时间戳转为字节数组
+                            dateTimeNowBytes = TicksTimeConvert.TimestampToBytes(dateTimeNow);
+
+                            CHCNetSDK.NET_DVR_JPEGPICTURE_WITH_APPENDDATA struJpegWithAppendData = new CHCNetSDK.NET_DVR_JPEGPICTURE_WITH_APPENDDATA();
+                            IntPtr ptr1 = Marshal.AllocHGlobal(100 * 1024);
+                            IntPtr ptr2 = Marshal.AllocHGlobal(2 * 1024 * 1024);
+                            IntPtr ptr3 = Marshal.AllocHGlobal(4 * 1024 * 1024);
+                            struJpegWithAppendData.pJpegPicBuff = ptr1;
+                            struJpegWithAppendData.pP2PDataBuff = ptr2;
+                            struJpegWithAppendData.pVisiblePicBuff = ptr3;
+
+                            bool res = CHCNetSDK.NET_DVR_CaptureJPEGPicture_WithAppendData(mUserIDs[0], 2, ref struJpegWithAppendData);//获取红外图像和温度数据
+
+                            if (res != true)
+                            {
+                                iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+                                str = "抓图失败，错误号：" + iLastErr; //登录失败，输出错误号
+                                MessageBox.Show(str);
+                                return;
+                            }
+
+                            //WriteBytesToFile("pointerData.jpeg", struJpegWithAppendData.pJpegPicBuff, struJpegWithAppendData.dwJpegPicLen);
+                            //WriteBytesToFile("temp.dat", struJpegWithAppendData.pP2PDataBuff, struJpegWithAppendData.dwP2PDataLen);
+
+                            //byte[] byteArray = new byte[] { 0x41, 0xE5, 0x49, 0x58 }; // 示例字节数组
+                            //float floatValue = BitConverter.ToSingle(byteArray, 0);
+
+                            //CHCNetSDK.NET_DVR_JPEGPARA lpJpegPara = new CHCNetSDK.NET_DVR_JPEGPARA();
+                            //lpJpegPara.wPicQuality = 2; //图像质量 Image quality
+                            //lpJpegPara.wPicSize = 0xff; //抓图分辨率 Picture size: 0xff-Auto(使用当前码流分辨率) 
+                            //                            //抓图分辨率需要设备支持，更多取值请参考SDK文档
+
+                            ////JPEG抓图保存成文件 Capture a JPEG picture
+                            ////string sJpegPicFileName;
+                            ////sJpegPicFileName = "filetest.jpg";//图片保存路径和文件名 the path and file name to save
+
+                            ////JEPG抓图，数据保存在缓冲区中 Capture a JPEG picture and save in the buffer
+                            //uint iBuffSize = 1024 * 1024; //缓冲区大小需要不小于一张图片数据的大小 The buffer size should not be less than the picture size
+                            //byte[] byJpegPicBuffer = new byte[iBuffSize];
+                            //uint dwSizeReturned = 0;
+
+                            //if (!CHCNetSDK.NET_DVR_CaptureJPEGPicture_NEW(mUserIDs[0], 1, ref lpJpegPara, byJpegPicBuffer, iBuffSize, ref dwSizeReturned))//获取可见光图像数据，byJpegPicBuffer--图像数据字节数组，dwSizeReturned--数据长度
+                            //{
+                            //    iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+                            //    str = "NET_DVR_CaptureJPEGPicture_NEW failed, error code= " + iLastErr;
+                            //    MessageBox.Show(str);
+                            //    return;
+                            //}
+                            //else
+                            //{
+                            //    ////将缓冲区里的JPEG图片数据写入文件 save the data into a file
+                            //    //string str = "buffertest.jpg";
+                            //    //FileStream fs = new FileStream(str, FileMode.Create);
+                            //    //int iLen = (int)dwSizeReturned;
+                            //    //fs.Write(byJpegPicBuffer, 0, iLen);
+                            //    //fs.Close();
+                            //    //str = "NET_DVR_CaptureJPEGPicture_NEW succ and save the data in buffer to 'buffertest.jpg'.";
+                            //    //MessageBox.Show(str);
+                            //}
+
+                            stopwatch.Stop();
+                            long a = stopwatch.ElapsedMilliseconds;
+
+                            int index;
+                            if (cacheDataCount >= 20)
+                            {
+                                List<int> maxTempList = new List<int>();
+                                for (int i = 0; i < cacheData.Length; i++)
+                                {
+                                    maxTempList.Add(BitConverter.ToInt32(cacheData[i].GetRange(0, 4).ToArray(), 0));
+                                }
+
+                                int min = maxTempList.Min();
+                                int minIndex = maxTempList.IndexOf(min);
+                                cacheData[minIndex].Clear();
+
+                                index = minIndex;
+                            }
+                            else
+                            {
+                                index = cacheDataCount;
+                            }
+
+                            byte[] IRImageArray = new byte[struJpegWithAppendData.dwJpegPicLen];
+                            IRImageArray = IntPtrToByteArray(struJpegWithAppendData.pJpegPicBuff, (int)struJpegWithAppendData.dwJpegPicLen);//将红外图像指针转字节数组
+
+                            byte[] IRTempArray = new byte[struJpegWithAppendData.dwP2PDataLen];
+                            IRTempArray = IntPtrToByteArray(struJpegWithAppendData.pP2PDataBuff, (int)struJpegWithAppendData.dwP2PDataLen);//将温度数据指针转字节数组
+
+                            float[] temp = new float[IR_IMAGE_WIDTH * IR_IMAGE_HEIGHT];
+                            temp = TempBytesToTempFloats(IRTempArray, IR_IMAGE_WIDTH, IR_IMAGE_HEIGHT);
+
+                            List<float> list = temp.ToList();
+                            float maxTemp = list.Max();
+
+
+                            byte[] t = new byte[4];
+                            t = BitConverter.GetBytes((maxTemp * 10));
+
+                            cacheData[index].AddRange(t);//添加最高温*10转换成字节数组，4个字节
+                            cacheData[index].AddRange(dateTimeNowBytes);//添加当前时间戳8个字节
+
+                            for (int i = 0; i < 2; i++)//10个预留字节
+                            {
+                                cacheData[index].Add(0x00);
+                            }
+
+                            cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwJpegPicLen));//添加红外图像长度，4个字节
+                            cacheData[index].AddRange(IRImageArray);//添加红外图像数据
+                            cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwP2PDataLen));//添加温度数据长度，四个字节
+                            cacheData[index].AddRange(IRTempArray);//添加温度数据
+                            //cacheData[index].AddRange(BitConverter.GetBytes(dwSizeReturned));//添加可见光图像长度，4个字节
+                            //cacheData[index].AddRange(byJpegPicBuffer);//添加可见光图像数据
+
+
+                            Marshal.FreeHGlobal(ptr1);
+                            Marshal.FreeHGlobal(ptr2);
+                            Marshal.FreeHGlobal(ptr3);
+
+
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("抓图失败" + ex.ToString());
+                        }
+
+                        cacheDataCount++;
+                    }
+
+
+                }
+
+                Thread.Sleep(1);
+            }
+        }
+
+        //温度最大值（最大值*10）      时间戳    轴序     红外图像长度   红外数据   温度数据长度     温度数据
+        // 4个字节                     8个字节   2个字节     4个字节                   4个字节
+        /// <summary>
+        /// 解析缓存数据
+        /// </summary>
+        private void AnalysisData()
+        {
+            for (int i = 0; i < cacheData.Length; i++)
+            {
+                if (cacheData[i].Count > 0)
+                {
+                    float maxTemp = BitConverter.ToSingle(cacheData[i].GetRange(0, 4).ToArray(), 0);//获取最高温
+                    Console.WriteLine(maxTemp * 1.0f / 10);
+
+                    long time = TicksTimeConvert.BytesToTimestamp(cacheData[i].GetRange(4, 8).ToArray());//获取时间戳                
+                    DateTime aa = TicksTimeConvert.Ticks132LocalTime(time);  //时间戳转本地时间
+
+                    short axelNum = BitConverter.ToInt16(cacheData[i].GetRange(12, 2).ToArray(), 0);//获取轴序
+
+                    int IRImageLength = BitConverter.ToInt32(cacheData[i].GetRange(4 + 8 + 2, 4).ToArray(), 0);//获取红外图像数据的长度
+
+                    string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");
+                    string irImagePath = savePath + "\\" + strTime + "_IR_" + i + ".jpeg";
+                    WriteBytesToFile(irImagePath, cacheData[i].GetRange(4 + 8 + 2 + 4, IRImageLength).ToArray(), IRImageLength);//保存红外图像
+
+                    string tempDataPath = savePath + "\\" + strTime + "_temp_" + i + ".dat";
+                    int tempDataLength = BitConverter.ToInt32(cacheData[i].GetRange(4 + 8 + 2 + 4 + IRImageLength, 4).ToArray(), 0);//获取温度数据的长度
+                    WriteBytesToFile(tempDataPath, cacheData[i].GetRange(4 + 8 + 2 + 4 + IRImageLength + 4, tempDataLength).ToArray(), tempDataLength);//保存温度数据
+
+                }
+
+
+            }
+
+
+
+            //string videoPath = "your_video.mp4";
+            //// 需要获取的帧索引列表
+            //int[] frameIndexes = new int[] { 10, 20, 30 }; // 第10, 20, 30帧
+
+            //using (var capture = new VideoCapture(videoPath))
+            //{
+            //    if (capture.IsOpened())
+            //    {
+            //        foreach (int frameIndex in frameIndexes)
+            //        {
+            //            capture.Set(CaptureProperty.PosFrames, frameIndex);
+            //            using (Mat frame = new Mat())
+            //            {
+            //                capture.Read(frame);
+            //                if (!frame.Empty())
+            //                {
+            //                    // 这里可以对帧frame进行处理
+            //                    // 例如保存帧到文件
+            //                    string outputPath = $"frame_{frameIndex}.png";
+            //                    Cv2.ImWrite(outputPath, frame);
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
+
+        }
+
+        private float[] TempBytesToTempFloats(byte[] tempBytes, int tempWidth, int tempHeight)
+        {
+            int i = 0;
+            int j = 0;
+            float[] tempFloats = new float[tempWidth * tempHeight];
+            while ((i + 4) <= tempBytes.Length)
+            {
+                byte[] temp = new byte[4];
+                temp[0] = tempBytes[i];
+                temp[1] = tempBytes[i + 1];
+                temp[2] = tempBytes[i + 2];
+                temp[3] = tempBytes[i + 3];
+                i += 4;
+
+                tempFloats[j++] = (float)Math.Round(BitConverter.ToSingle(temp, 0), 1); //保留一位小数
+            }
+            return tempFloats;
+        }
+
 
         private void deleteAllDrawBtn_MouseLeave(object sender, EventArgs e)
         {
@@ -337,7 +635,232 @@ namespace PreviewDemo
 
         private void takePicBtn_Click(object sender, EventArgs e)
         {
-            
+
+            var capture = new VideoCapture("20240715_094710_390.mp4");
+
+            // 检查视频是否成功打开
+            if (capture.IsOpened())
+            {
+
+                // 获取视频的帧数
+                Console.WriteLine(" 帧数" + capture.FrameCount);
+                Console.WriteLine(" 帧频" + capture.Fps);
+                Console.WriteLine("时长" + capture.FrameCount / capture.Fps);
+
+            }
+            else
+            {
+                Console.WriteLine("Unable to open the video file.");
+                return;
+            }
+
+            //FileInfo vedioFileInfo = new FileInfo(Application.StartupPath + "\\" + "20240715_094710_390.mp4");
+            //string vedioFileName = vedioFileInfo.Name;
+            string vedioFileNameWithoutExtension = Path.GetFileNameWithoutExtension(Application.StartupPath + "\\" + "20240715_094710_390.mp4");
+            string vedioHour = vedioFileNameWithoutExtension.Substring(9, 2);
+            string vedioMin = vedioFileNameWithoutExtension.Substring(11, 2);
+            string vedioSec = vedioFileNameWithoutExtension.Substring(13, 2);
+            string vedioMillsec = vedioFileNameWithoutExtension.Substring(16, 3);
+
+            string IRImageFileNameWithoutExtension = Path.GetFileNameWithoutExtension(Application.StartupPath + "\\" + "20240715_094711_654_IR_4.jpeg");
+            string IRImageHour = IRImageFileNameWithoutExtension.Substring(9, 2);
+            string IRImageMin = IRImageFileNameWithoutExtension.Substring(11, 2);
+            string IRImageSec = IRImageFileNameWithoutExtension.Substring(13, 2);
+            string IRImageMillsec = IRImageFileNameWithoutExtension.Substring(16, 3);
+
+
+            int timeDiff = Convert.ToUInt16(IRImageHour) * 60 * 60 * 1000 + Convert.ToUInt16(IRImageMin) * 60 * 1000 + Convert.ToUInt16(IRImageSec) * 1000 + Convert.ToUInt16(IRImageMillsec)
+                - Convert.ToUInt16(vedioHour) * 60 * 60 * 1000 - Convert.ToUInt16(vedioMin) * 60 * 1000 - Convert.ToUInt16(vedioSec) * 1000 - Convert.ToUInt16(vedioMillsec);
+
+            int frameIndex = (int)(timeDiff * capture.Fps / 1000);
+
+            int startFrameIndex = 0;
+            int endFrameIndex = 0;
+
+            if(frameIndex - 5 > 0)
+            {
+                startFrameIndex = frameIndex - 5;
+            }
+            else
+            {
+                startFrameIndex = frameIndex;
+            }
+
+
+            if(frameIndex + 4 < capture.FrameCount)
+            {
+                endFrameIndex = frameIndex + 4;
+            }
+            else
+            {
+                endFrameIndex = frameIndex;
+            }
+
+            for (int i = startFrameIndex ; i <= endFrameIndex; i++)
+            {
+                capture.Set(CaptureProperty.PosFrames, i);
+                using (Mat frame = new Mat())
+                {
+                    capture.Read(frame);
+                    if (!frame.Empty())
+                    {
+                        // 这里可以对帧frame进行处理
+                        // 例如保存帧到文件
+                        string outputPath = $"frame_{i}.png";
+                        Cv2.ImWrite(outputPath, frame);
+                    }
+                }
+            }
+
+            int a = 1;
+
+
+            //CHCNetSDK.NET_DVR_JPEGPICTURE_WITH_APPENDDATA struJpegWithAppendData = new CHCNetSDK.NET_DVR_JPEGPICTURE_WITH_APPENDDATA();
+            //IntPtr ptr1 = Marshal.AllocHGlobal(100 * 1024);
+            //IntPtr ptr2 = Marshal.AllocHGlobal(2 * 1024 * 1024);
+            //IntPtr ptr3 = Marshal.AllocHGlobal(4 * 1024 * 1024);
+            //struJpegWithAppendData.pJpegPicBuff = ptr1;
+            //struJpegWithAppendData.pP2PDataBuff = ptr2;
+            //struJpegWithAppendData.pVisiblePicBuff = ptr3;
+
+            //if (mUserIDs[0] >= 0)
+            //{
+            //    try
+            //    {
+            //        bool res = CHCNetSDK.NET_DVR_CaptureJPEGPicture_WithAppendData(mUserIDs[0], 2, ref struJpegWithAppendData);
+
+            //        if (res != true)
+            //        {
+            //            iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+            //            str = "抓图失败，错误号：" + iLastErr; //登录失败，输出错误号
+            //            MessageBox.Show(str);
+            //            return;
+            //        }
+
+            //        //byte[] byteArray = new byte[] { 0x41, 0xE5, 0x49, 0x58 }; // 示例字节数组
+            //        //float floatValue = BitConverter.ToSingle(byteArray, 0);
+
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Console.WriteLine("抓图失败" + ex.ToString());
+            //    }
+
+
+            //    CHCNetSDK.NET_DVR_JPEGPARA lpJpegPara = new CHCNetSDK.NET_DVR_JPEGPARA();
+            //    lpJpegPara.wPicQuality = 0; //图像质量 Image quality
+            //    lpJpegPara.wPicSize = 0xff; //抓图分辨率 Picture size: 0xff-Auto(使用当前码流分辨率) 
+            //                                //抓图分辨率需要设备支持，更多取值请参考SDK文档
+
+            //    //JPEG抓图保存成文件 Capture a JPEG picture
+            //    string sJpegPicFileName;
+            //    sJpegPicFileName = "filetest.jpg";//图片保存路径和文件名 the path and file name to save
+
+            //    //JEPG抓图，数据保存在缓冲区中 Capture a JPEG picture and save in the buffer
+            //    uint iBuffSize = 1024 * 1024; //缓冲区大小需要不小于一张图片数据的大小 The buffer size should not be less than the picture size
+            //    byte[] byJpegPicBuffer = new byte[iBuffSize];
+            //    uint dwSizeReturned = 0;
+
+            //    if (!CHCNetSDK.NET_DVR_CaptureJPEGPicture_NEW(mUserIDs[0], 1, ref lpJpegPara, byJpegPicBuffer, iBuffSize, ref dwSizeReturned))
+            //    {
+            //        iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+            //        str = "NET_DVR_CaptureJPEGPicture_NEW failed, error code= " + iLastErr;
+            //        MessageBox.Show(str);
+            //        return;
+            //    }
+            //    else
+            //    {
+
+            //        //将缓冲区里的JPEG图片数据写入文件 save the data into a file
+            //        string str = "buffertest.jpg";
+            //        int iLen = (int)dwSizeReturned;
+            //        using (FileStream fs = new FileStream(str, FileMode.OpenOrCreate))
+            //        {
+            //            fs.Write(byJpegPicBuffer, 0, iLen);
+            //        }
+            //        str = "NET_DVR_CaptureJPEGPicture_NEW succ and save the data in buffer to 'buffertest.jpg'.";
+            //        MessageBox.Show(str);
+            //    }
+
+            //    WriteIntPtrToFile("pointerData.jpeg", struJpegWithAppendData.pJpegPicBuff, struJpegWithAppendData.dwJpegPicLen);
+            //    WriteIntPtrToFile("temp.dat", struJpegWithAppendData.pP2PDataBuff, struJpegWithAppendData.dwP2PDataLen);
+            //}
+
+
+            //float[] tempData = new float[640 * 512];
+            //int i = 0;
+            //using (FileStream fs = new FileStream("temp.dat", FileMode.OpenOrCreate))
+            //{
+            //    using (BinaryReader br = new BinaryReader(fs))
+            //    {
+            //        while (fs.Position < fs.Length)
+            //        {
+            //            float buffer = br.ReadSingle(); // 读取16个字节（四个四节）
+
+            //            tempData[i] = buffer;
+            //            i++;
+            //            // 处理buffer中的数据
+            //            // ...
+            //        }
+            //    }
+            //}
+
+
+            //float[] temp = new float[IR_IMAGE_WIDTH * IR_IMAGE_HEIGHT];
+            //temp = TempBytesToTempFloats(IntPtrToByteArray(struJpegWithAppendData.pP2PDataBuff, (int)struJpegWithAppendData.dwP2PDataLen), IR_IMAGE_WIDTH, IR_IMAGE_HEIGHT);
+
+
+            //List<float> list = temp.ToList();
+            //float max = list.Max();
+
+            //Marshal.FreeHGlobal(ptr1);
+            //Marshal.FreeHGlobal(ptr2);
+            //Marshal.FreeHGlobal(ptr3);
+            //Console.WriteLine("aaa");
+
+        }
+
+
+
+
+        private void WriteIntPtrToFile(string filePath, IntPtr intPtr, uint length)
+        {
+
+            byte[] array = new byte[length]; // 创建一个int类型的数组，arrayLength为数组长度
+
+            unsafe
+            {
+                byte* ptr = (byte*)intPtr.ToPointer(); // 将IntPtr转换为int类型的指针
+
+                for (int i = 0; i < length; i++)
+                {
+                    array[i] = *(ptr + i); // 通过指针运算将数据复制到数组中
+                }
+            }
+
+            using (FileStream fileStream = new FileStream(filePath, FileMode.OpenOrCreate))
+            {
+                using (BinaryWriter writer = new BinaryWriter(fileStream))
+                {
+                    // 写入指针数据
+                    writer.Write(array);
+                }
+
+            }
+        }
+
+
+        private void WriteBytesToFile(string filePath, byte[] bytes, int length)
+        {
+            using (FileStream fileStream = new FileStream(filePath, FileMode.OpenOrCreate))
+            {
+                using (BinaryWriter writer = new BinaryWriter(fileStream))
+                {
+                    // 写入指针数据
+                    writer.Write(bytes);
+                }
+
+            }
         }
 
         protected override void OnResize(EventArgs e)
@@ -432,6 +955,24 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StopRecordBtn_Click(object sender, EventArgs e)
         {
+            isStartPrewview = false;
+            //停止录像 Stop recording
+            if (!CHCNetSDK.NET_DVR_StopSaveRealData(mRealHandles[0]))
+            {
+                iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+                str = "NET_DVR_StopSaveRealData failed, error code= " + iLastErr;
+                MessageBox.Show(str);
+                return;
+            }
+            else
+            {
+                str = "NET_DVR_StopSaveRealData succ and the saved file is " + sVideoFileName;
+                MessageBox.Show(str);
+                m_bRecord = false;
+            }
+
+          
+            AnalysisData();
 
         }
 
@@ -490,7 +1031,7 @@ namespace PreviewDemo
         private void ConnectSocketToReceiveTemp(int deviceNum)
         {
 
-        
+
         }
 
         private void ByteToInt16(Byte[] arrByte, int nByteCount, ref Int16[] destInt16Arr)
@@ -526,9 +1067,56 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StartRecordBtn_Click(object sender, EventArgs e)
         {
-     
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-            SetButtonImg(startRecordBtn, "开始录制-line(1).png");
+            savePath = Application.StartupPath + "\\" + ipList[0];
+          
+         
+            //获取当前时间戳
+            long dateTimeNow = TicksTimeConvert.GetNowTicks13();
+
+            DateTime aa = TicksTimeConvert.Ticks132LocalTime(dateTimeNow);  //时间戳转本地时间
+            string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");
+
+
+            savePath = savePath + "\\" + strTime;
+
+            //判断文件夹是否存在，如果不存在，新建文件夹
+            if (!Directory.Exists(savePath))
+            {
+                Directory.CreateDirectory(savePath);
+            }
+
+            string recordPath = savePath + "\\" + strTime + ".mp4";
+
+            if (mUserIDs[0] >= 0)
+            {
+                if (m_bRecord == false)
+                {
+                    //强制I帧 Make one key frame                      
+                    CHCNetSDK.NET_DVR_MakeKeyFrame(mUserIDs[0], 1);
+
+                    //开始录像 Start recording
+                    if (!CHCNetSDK.NET_DVR_SaveRealData(mRealHandles[0], recordPath))
+                    {
+                        iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+                        str = "NET_DVR_SaveRealData failed, error code= " + iLastErr;
+                        MessageBox.Show(str);
+                        return;
+                    }
+                    else
+                    {
+                        m_bRecord = true;
+                    }
+                }
+
+                SetButtonImg(startRecordBtn, "开始录制-line(1).png");
+                stopwatch.Stop();
+                long a = stopwatch.ElapsedMilliseconds;
+                isStartPrewview = true;
+
+            }
         }
 
         /// <summary>
@@ -570,7 +1158,7 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StartPrewviewBtn_MouseLeave(object sender, EventArgs e)
         {
-         
+
         }
 
 
@@ -581,7 +1169,7 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StartPrewviewBtn_Click(object sender, EventArgs e)
         {
-          
+
         }
 
         /// <summary>
@@ -604,7 +1192,7 @@ namespace PreviewDemo
 
         private void GetTmp()
         {
-           
+
 
         }
 
@@ -613,7 +1201,7 @@ namespace PreviewDemo
         /// </summary>
         private void StopPrewview()
         {
-            
+
         }
 
         private string saveFilePath()
@@ -637,7 +1225,7 @@ namespace PreviewDemo
         /// <param name="imageName"></param>
         private void SetButtonImg(UISymbolButton btn, string imageName)
         {
-           
+
         }
 
         /// <summary>
@@ -656,60 +1244,53 @@ namespace PreviewDemo
 
         private void PreviewOpDevice(int deviceNum, CHCNetSDK.REALDATACALLBACK realCallback)
         {
-            
+
 
 
         }
 
+        int count;
+
         /// <summary>
-        /// 可见光相机实时预览数据回调
+        /// 设备0可见光实时预览数据回调
         /// </summary>
         /// <param name="lRealHandle"></param>
         /// <param name="dwDataType"></param>
         /// <param name="pBuffer"></param>
         /// <param name="dwBufSize"></param>
         /// <param name="pUser"></param>
-        public void RealDataCallBack(Int32 lRealHandle, UInt32 dwDataType, IntPtr pBuffer, UInt32 dwBufSize, IntPtr pUser)
+        public void RealDataCallBack_OP_0(Int32 lRealHandle, UInt32 dwDataType, IntPtr pBuffer, UInt32 dwBufSize, IntPtr pUser)
         {
-            if (dwBufSize > 0)
+            switch (dwDataType)
             {
+                //case CHCNetSDK.NET_DVR_STREAMDATA:     // video stream datacount
+                //    count++;
+                //    Console.WriteLine("可见光回调函数：" + count + "时间：" + System.DateTime.Now);
 
-                Console.WriteLine("dwBufSize" + dwBufSize);
-                //byte[] sData = new byte[dwBufSize];
-                //Marshal.Copy(pBuffer, sData, 0, (Int32)dwBufSize);
-
-
-                //if (saveImageFlag1)
-                //{
-                //    string strFileName = "test1.jpg";
-                //    Cv2.ImWrite(strFileName, mgMatShow);
-                //    saveImageFlag1 = false;
-                //}
-
-
-                //string str = "实时流数据.ps";
-                //FileStream fs = new FileStream(str, FileMode.Create);
-                //int iLen = (int)dwBufSize;
-                //fs.Write(sData, 0, iLen);
-                //fs.Close();
-
-
+                //    if (count > 2147483646)
+                //    {
+                //        count = 0;
+                //    }
+                //    break;
             }
+
+
         }
 
         /// <summary>
-        /// 登录可见光相机
+        /// 设备0红外实时预览数据回调
         /// </summary>
-        /// <param name="deviceNum">设备号，从0开始</param>
-        /// <param name="ipAddress">ip地址</param>
-        /// <param name="userName">用户名</param>
-        /// <param name="psw">密码</param>
-        /// <param name="port">端口号</param>
-        /// <param name="loginCallBack">登录回调函数</param>
-        private void LoginOpDevice(int deviceNum, string ipAddress, string userName, string psw, string port, CHCNetSDK.LOGINRESULTCALLBACK loginCallBack)
+        /// <param name="lRealHandle"></param>
+        /// <param name="dwDataType"></param>
+        /// <param name="pBuffer"></param>
+        /// <param name="dwBufSize"></param>
+        /// <param name="pUser"></param>
+        public void RealDataCallBack_IR_0(Int32 lRealHandle, UInt32 dwDataType, IntPtr pBuffer, UInt32 dwBufSize, IntPtr pUser)
         {
-
+            // Console.WriteLine("回调函数0：" + System.DateTime.Now);
         }
+
+
         /// <summary>
         /// 登录回调函数
         /// </summary>
@@ -717,7 +1298,7 @@ namespace PreviewDemo
         /// <param name="dwResult"></param>
         /// <param name="lpDeviceInfo"></param>
         /// <param name="pUser"></param>
-        public void cbLoginCallBack(int lUserID, int dwResult, IntPtr lpDeviceInfo, IntPtr pUser)
+        public void cbLoginCallBack_0(int lUserID, int dwResult, IntPtr lpDeviceInfo, IntPtr pUser)
         {
             //string strLoginCallBack = "登录设备，lUserID：" + lUserID + "，dwResult：" + dwResult;
 
@@ -762,13 +1343,49 @@ namespace PreviewDemo
 
         private void SaveOpImage(int deviceNum, string rootPath, int /*userID*/handle, int channel)
         {
-           
+
         }
 
 
         private void ClosePictureBox2_Click(object sender, EventArgs e)
         {
-           
+            try
+            {
+                for (int i = 0; i < Globals.systemParam.deviceCount; i++)
+                {
+
+                    if (mRealHandles[i] >= 0)
+                    {
+                        CHCNetSDK.NET_DVR_StopRealPlay(mRealHandles[i]);
+                        mRealHandles[i] = -1;
+                        RealDatas[i] = null;
+                    }
+
+                    if (Globals.systemParam.deviceCount > 1)
+                    {
+                        CHCNetSDK.NET_DVR_StopRealPlay(mRealHandles[i + 2]);
+                        mRealHandles[i + 2] = -1;
+                        RealDatas[i + 2] = null;
+                    }
+
+
+                    if (mUserIDs[i] >= 0)
+                    {
+                        CHCNetSDK.NET_DVR_Logout(mUserIDs[i]);
+                        mUserIDs[i] = -1;
+
+                    }
+                }
+
+                CHCNetSDK.NET_DVR_Cleanup();
+
+                Globals.fileInfos = null;
+            }
+            catch (Exception ex)
+            {
+                Globals.Log("关闭窗口" + ex.ToString());
+            }
+
             this.Close();
             Application.Exit();
             System.Environment.Exit(0);
@@ -836,7 +1453,156 @@ namespace PreviewDemo
                 CHCNetSDK.NET_DVR_SetLogToFile(3, Globals.SDKLogPath, true);
             }
 
+            int deviceCount = Globals.systemParam.deviceCount; //通过配置文件获取设备数量
+
+            pics = new PictureBox[deviceCount * 2];//定义显示图像控件，每个设备显示可见光和红外图像。
+
+            //初始化红外设备ip集合
+            ipList.Add(Globals.systemParam.ip_0);
+            ipList.Add(Globals.systemParam.ip_1);
+
+            for (int i = 0; i < deviceCount; i++)
+            {
+                //初始化userId为-1
+                mUserIDs.Add(-1);
+
+                DeviceInfos.Add(new CHCNetSDK.NET_DVR_DEVICEINFO_V40());
+                mRealHandles.Add(-1);
+                mRealHandles.Add(-1);
+
+                LoginCallBacks.Add(null);
+                RealDatas.Add(null);
+                RealDatas.Add(null);
+
+            }
+
+            for (int i = 0; i < cacheData.Length; i++)
+            {
+                cacheData[i] = new List<byte>();
+            }
         }
+
+
+        /// <summary>
+        /// 注册设备
+        /// </summary>
+        /// <param name="deviceNum">设备号 从0开始</param>
+        /// <param name="ipAddress"></param>
+        /// <param name="userName"></param>
+        /// <param name="psw"></param>
+        /// <param name="port"></param>
+        /// <param name="loginCallBack"></param>
+        private void LoginDevice(int deviceNum, string ipAddress, string userName, string psw, string port, CHCNetSDK.LOGINRESULTCALLBACK loginCallBack)
+        {
+            if (mUserIDs[deviceNum] < 0)
+            {
+                struLogInfo = new CHCNetSDK.NET_DVR_USER_LOGIN_INFO();
+
+                //设备IP地址或者域名
+                byte[] byIP = System.Text.Encoding.Default.GetBytes(ipAddress);
+                struLogInfo.sDeviceAddress = new byte[129];
+                byIP.CopyTo(struLogInfo.sDeviceAddress, 0);
+
+                //设备用户名
+                byte[] byUserName = System.Text.Encoding.Default.GetBytes(userName);
+                struLogInfo.sUserName = new byte[64];
+                byUserName.CopyTo(struLogInfo.sUserName, 0);
+
+                //设备密码
+                byte[] byPassword = System.Text.Encoding.Default.GetBytes(psw);
+                struLogInfo.sPassword = new byte[64];
+                byPassword.CopyTo(struLogInfo.sPassword, 0);
+
+                struLogInfo.wPort = ushort.Parse(port);//设备服务端口号
+
+                if (LoginCallBacks[deviceNum] == null)
+                {
+                    LoginCallBacks[deviceNum] = new CHCNetSDK.LOGINRESULTCALLBACK(loginCallBack);//注册回调函数                    
+                }
+                struLogInfo.cbLoginResult = LoginCallBacks[deviceNum];
+                struLogInfo.bUseAsynLogin = false; //是否异步登录：0- 否，1- 是 
+
+                DeviceInfo = DeviceInfos[deviceNum];
+
+                //登录设备 Login the device
+                mUserIDs[deviceNum] = CHCNetSDK.NET_DVR_Login_V40(ref struLogInfo, ref DeviceInfo);
+
+                if (mUserIDs[deviceNum] < 0)
+                {
+                    iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+                    str = "登录设备" + ipList[deviceNum] + "失败！" + "错误号：" + iLastErr; //登录失败，输出错误号
+                    Globals.Log(str);
+                    return;
+                }
+                else
+                {
+                    //登录成功
+                    //MessageBox.Show("Login Success!");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 预览图像
+        /// </summary>
+        /// <param name="deviceNum">设备号，从0开始</param>
+        /// <param name="playWndNum">预览控件编号，从0开始</param>
+        /// <param name="channelNum">通道号：1--可见光；2-红外</param>
+        /// <param name="realCallback">预览回调函数</param>
+        /// <param name="useCallback">是否使用回调预览</param>
+        private void Prewview(int deviceNum, int playWndNum, int channelNum, CHCNetSDK.REALDATACALLBACK realCallback, bool useCallback)
+        {
+            if (mUserIDs[deviceNum] < 0)
+            {
+                Globals.Log("请先登录设备" + ipList[deviceNum]);
+                return;
+            }
+
+            if (mRealHandles[playWndNum] < 0)
+            {
+                CHCNetSDK.NET_DVR_PREVIEWINFO lpPreviewInfo = new CHCNetSDK.NET_DVR_PREVIEWINFO();
+                lpPreviewInfo.hPlayWnd = pics[playWndNum].Handle;//预览窗口
+                lpPreviewInfo.lChannel = channelNum;//预te览的设备通道
+                lpPreviewInfo.dwStreamType = 0;//码流类型：0-主码流，1-子码流，2-码流3，3-码流4，以此类推
+                lpPreviewInfo.dwLinkMode = 0;//连接方式：0- TCP方式，1- UDP方式，2- 多播方式，3- RTP方式，4-RTP/RTSP，5-RSTP/HTTP 
+                lpPreviewInfo.bBlocked = false; //0- 非阻塞取流，1- 阻塞取流
+                lpPreviewInfo.dwDisplayBufNum = 6; //播放库播放缓冲区最大缓冲帧数
+                lpPreviewInfo.byProtoType = 0;//应用层取流协议，0-私有协议，1-RTSP协议
+                lpPreviewInfo.byPreviewMode = 0;//预览模式，0-正常预览，1-延迟预览
+
+                if (RealDatas[playWndNum] == null)
+                {
+                    RealDatas[playWndNum] = new CHCNetSDK.REALDATACALLBACK(realCallback);//预览实时流回调函数
+                }
+
+                IntPtr pUser = new IntPtr();//用户数据
+
+                if (useCallback)
+                {
+                    //回调函数预览
+                    mRealHandles[playWndNum] = CHCNetSDK.NET_DVR_RealPlay_V40(mUserIDs[deviceNum], ref lpPreviewInfo, RealDatas[playWndNum], pUser);
+                }
+                else
+                {
+                    //直接预览
+                    mRealHandles[playWndNum] = CHCNetSDK.NET_DVR_RealPlay_V40(mUserIDs[deviceNum], ref lpPreviewInfo, null/*realCallback*/, pUser);
+                }
+
+                if (mRealHandles[playWndNum] < 0)
+                {
+                    iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+                    str = "预览" + ipList[deviceNum] + "通道：" + channelNum + "失败！" + "错误号：" + iLastErr; //预览失败，输出错误号
+                    MessageBox.Show(str);
+                    return;
+                }
+                else
+                {
+
+                }
+
+            }
+        }
+
 
         private void TabPage1_MouseDown(object sender, MouseEventArgs e)
         {
@@ -860,7 +1626,7 @@ namespace PreviewDemo
 
         private void Pics0_MouseUp(object sender, MouseEventArgs e)
         {
-  
+
         }
 
 

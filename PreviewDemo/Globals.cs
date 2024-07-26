@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using System.Windows.Forms;
+using OpenCvSharp;
 
 namespace PreviewDemo
 {
@@ -24,6 +25,11 @@ namespace PreviewDemo
         public static string SDKLogPath =  Application.StartupPath + "\\" + "SdkLog\\";
 
         public static string systemXml = Application.StartupPath + "\\SystemSetting.xml";
+
+        public static string RootSavePath = "C:" + "\\" + "HIK";
+
+        const Int32 TEMP_WIDTH = 640;//红外图像宽度
+        const Int32 TEMP_HEIGHT = 512;//红外图像宽度
 
 
         public static FileInfo[] fileInfos;
@@ -123,6 +129,104 @@ namespace PreviewDemo
              y.LastWriteTime.CompareTo(x.LastWriteTime));
         }
 
+        public static float[] TempBytesToTempFloats(byte[] tempBytes, int tempWidth, int tempHeight)
+        {
+            int i = 0;
+            int j = 0;
+            float[] tempFloats = new float[tempWidth * tempHeight];
+            while ((i + 4) <= tempBytes.Length)
+            {
+                byte[] temp = new byte[4];
+                temp[0] = tempBytes[i];
+                temp[1] = tempBytes[i + 1];
+                temp[2] = tempBytes[i + 2];
+                temp[3] = tempBytes[i + 3];
+                i += 4;
 
+                tempFloats[j++] = (float)Math.Round(BitConverter.ToSingle(temp, 0), 1); //保留一位小数
+            }
+            return tempFloats;
+        }
+
+        public static  float[] GetTempFileToArray(string tempFilePath)
+        {
+            float[] tempData = new float[TEMP_WIDTH * TEMP_HEIGHT];
+            int k = 0;
+            using (FileStream fs = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read))
+            {
+                using (BinaryReader br = new BinaryReader(fs))
+                {
+                    while (fs.Position < fs.Length)
+                    {
+                        float buffer = br.ReadSingle(); // 读取16个字节（四个四节）
+
+                        tempData[k] = buffer;
+                        k++;
+                        // 处理buffer中的数据
+                        // ...
+                    }
+
+                    return tempData;
+                }
+            }
+
+
+
+            //realTemps[0] = new float[TEMP_WIDTH, TEMP_HEIGHT];
+            //for (int i = 0; i < TEMP_WIDTH; i++)
+            //{
+            //    for (int j = 0; j < TEMP_HEIGHT; j++)
+            //    {
+            //        // ShortToUnsignedInt
+            //        //realTemp[i][j] = (0xff & tempData[j * infraredImageWidth + i]) | (0xff00 & (tempData[j * infraredImageWidth + i + infraredImageWidth * infraredImageHeight] << 8)) & 0xffff;
+
+            //        realTemps[0][i, j] = tempData[j * TEMP_WIDTH + i];
+
+            //    }
+            //}
+
+        }
+
+        public static void DrawCross(Mat img, OpenCvSharp.Point cor, Scalar color, int crossLine, int lineWidth)
+        {
+            Cv2.Line(img, cor, new OpenCvSharp.Point(cor.X + crossLine, cor.Y), color, lineWidth);
+            Cv2.Line(img, cor, new OpenCvSharp.Point(cor.X - crossLine, cor.Y), color, lineWidth);
+            Cv2.Line(img, cor, new OpenCvSharp.Point(cor.X, cor.Y + crossLine), color, lineWidth);
+            Cv2.Line(img, cor, new OpenCvSharp.Point(cor.X, cor.Y - crossLine), color, lineWidth);
+        }
+
+        public static void DrawText(Mat img, string maxTemp, OpenCvSharp.Point cor)
+        {
+            Cv2.PutText(img, maxTemp.ToString(), new OpenCvSharp.Point(cor.X + 3, cor.Y + 25), OpenCvSharp.HersheyFonts.HersheySimplex, 0.8, OpenCvSharp.Scalar.LightGreen, 2);
+        }
+
+        public static List<string> GetOPImages(string irImageName, string[] opImagePaths)
+        {
+            List<string> imagePaths = new List<string>();
+            string IRImageFileNameWithoutExtension = Path.GetFileNameWithoutExtension(irImageName);
+            string IRImageHour = IRImageFileNameWithoutExtension.Substring(9, 2);
+            string IRImageMin = IRImageFileNameWithoutExtension.Substring(11, 2);
+            string IRImageSec = IRImageFileNameWithoutExtension.Substring(13, 2);
+            string IRImageMillsec = IRImageFileNameWithoutExtension.Substring(16, 3);
+
+            foreach (string fileName in opImagePaths)
+            {
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+                string hour = fileNameWithoutExtension.Substring(9, 2);
+                string min = fileNameWithoutExtension.Substring(11, 2);
+                string sec = fileNameWithoutExtension.Substring(13, 2);
+                string millsec = fileNameWithoutExtension.Substring(16, 3);
+
+                int timeDiff = Convert.ToUInt16(IRImageHour) * 60 * 60 * 1000 + Convert.ToUInt16(IRImageMin) * 60 * 1000 + Convert.ToUInt16(IRImageSec) * 1000 + Convert.ToUInt16(IRImageMillsec)
+                    - Convert.ToUInt16(hour) * 60 * 60 * 1000 - Convert.ToUInt16(min) * 60 * 1000 - Convert.ToUInt16(sec) * 1000 - Convert.ToUInt16(millsec);
+
+                if (Math.Abs(timeDiff) <= 500)
+                {
+                    imagePaths.Add(fileName);
+                }
+            }
+
+            return imagePaths;
+        }
     }
 }

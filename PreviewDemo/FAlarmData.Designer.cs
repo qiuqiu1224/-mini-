@@ -1,6 +1,6 @@
 ﻿namespace PreviewDemo
 {
-    partial class FormVehicleData
+    partial class FAlarmData
     {
         /// <summary>
         /// Required designer variable.
@@ -28,8 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormVehicleData));
-            this.uiPanel1 = new Sunny.UI.UIPanel();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FAlarmData));
             this.uiLabel4 = new Sunny.UI.UILabel();
             this.uiComboBox_DeviceName = new Sunny.UI.UIComboBox();
             this.uiLabel3 = new Sunny.UI.UILabel();
@@ -38,8 +37,9 @@
             this.uiDatePickerStart = new Sunny.UI.UIDatePicker();
             this.uiLabel2 = new Sunny.UI.UILabel();
             this.uiLabel1 = new Sunny.UI.UILabel();
+            this.listView_AlarmData = new System.Windows.Forms.ListView();
             this.uiPanel2 = new Sunny.UI.UIPanel();
-            this.listView_VehicleData = new System.Windows.Forms.ListView();
+            this.uiPanel1 = new Sunny.UI.UIPanel();
             this.uiPanel3 = new Sunny.UI.UIPanel();
             this.panel1 = new System.Windows.Forms.Panel();
             this.label2 = new System.Windows.Forms.Label();
@@ -48,8 +48,8 @@
             this.label1 = new System.Windows.Forms.Label();
             this.ir_image_next_btn = new Sunny.UI.UIImageButton();
             this.ir_Image_preview_btn = new Sunny.UI.UIImageButton();
-            this.uiPanel1.SuspendLayout();
             this.uiPanel2.SuspendLayout();
+            this.uiPanel1.SuspendLayout();
             this.uiPanel3.SuspendLayout();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.op_image_next_btn)).BeginInit();
@@ -57,31 +57,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.ir_image_next_btn)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ir_Image_preview_btn)).BeginInit();
             this.SuspendLayout();
-            // 
-            // uiPanel1
-            // 
-            this.uiPanel1.Controls.Add(this.uiLabel4);
-            this.uiPanel1.Controls.Add(this.uiComboBox_DeviceName);
-            this.uiPanel1.Controls.Add(this.uiLabel3);
-            this.uiPanel1.Controls.Add(this.uiDatePickerEnd);
-            this.uiPanel1.Controls.Add(this.uiButton1);
-            this.uiPanel1.Controls.Add(this.uiDatePickerStart);
-            this.uiPanel1.Controls.Add(this.uiLabel2);
-            this.uiPanel1.Controls.Add(this.uiLabel1);
-            this.uiPanel1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.uiPanel1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
-            this.uiPanel1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiPanel1.Location = new System.Drawing.Point(0, 0);
-            this.uiPanel1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.uiPanel1.MinimumSize = new System.Drawing.Size(1, 1);
-            this.uiPanel1.Name = "uiPanel1";
-            this.uiPanel1.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
-            this.uiPanel1.RectColor = System.Drawing.Color.Transparent;
-            this.uiPanel1.RectSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.None;
-            this.uiPanel1.Size = new System.Drawing.Size(1176, 49);
-            this.uiPanel1.TabIndex = 0;
-            this.uiPanel1.Text = null;
-            this.uiPanel1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // uiLabel4
             // 
@@ -218,10 +193,25 @@
             this.uiLabel1.Text = "开始时间";
             this.uiLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
+            // listView_AlarmData
+            // 
+            this.listView_AlarmData.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
+            this.listView_AlarmData.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listView_AlarmData.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.listView_AlarmData.ForeColor = System.Drawing.Color.White;
+            this.listView_AlarmData.HideSelection = false;
+            this.listView_AlarmData.Location = new System.Drawing.Point(0, 0);
+            this.listView_AlarmData.Name = "listView_AlarmData";
+            this.listView_AlarmData.Size = new System.Drawing.Size(250, 739);
+            this.listView_AlarmData.TabIndex = 0;
+            this.listView_AlarmData.UseCompatibleStateImageBehavior = false;
+            this.listView_AlarmData.SelectedIndexChanged += new System.EventHandler(this.ListView_AlarmData_SelectedIndexChanged);
+            this.listView_AlarmData.MouseClick += new System.Windows.Forms.MouseEventHandler(this.ListView_AlarmData_MouseClick);
+            // 
             // uiPanel2
             // 
             this.uiPanel2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
-            this.uiPanel2.Controls.Add(this.listView_VehicleData);
+            this.uiPanel2.Controls.Add(this.listView_AlarmData);
             this.uiPanel2.Dock = System.Windows.Forms.DockStyle.Left;
             this.uiPanel2.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
             this.uiPanel2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
@@ -231,24 +221,35 @@
             this.uiPanel2.Name = "uiPanel2";
             this.uiPanel2.RectColor = System.Drawing.Color.Transparent;
             this.uiPanel2.RectSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.None;
-            this.uiPanel2.Size = new System.Drawing.Size(250, 692);
-            this.uiPanel2.TabIndex = 1;
+            this.uiPanel2.Size = new System.Drawing.Size(250, 739);
+            this.uiPanel2.TabIndex = 4;
             this.uiPanel2.Text = "uiPanel2";
             this.uiPanel2.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // listView_VehicleData
+            // uiPanel1
             // 
-            this.listView_VehicleData.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
-            this.listView_VehicleData.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.listView_VehicleData.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.listView_VehicleData.ForeColor = System.Drawing.Color.White;
-            this.listView_VehicleData.HideSelection = false;
-            this.listView_VehicleData.Location = new System.Drawing.Point(0, 0);
-            this.listView_VehicleData.Name = "listView_VehicleData";
-            this.listView_VehicleData.Size = new System.Drawing.Size(250, 692);
-            this.listView_VehicleData.TabIndex = 0;
-            this.listView_VehicleData.UseCompatibleStateImageBehavior = false;
-            this.listView_VehicleData.MouseClick += new System.Windows.Forms.MouseEventHandler(this.ListView_VehicleData_MouseClick);
+            this.uiPanel1.Controls.Add(this.uiLabel4);
+            this.uiPanel1.Controls.Add(this.uiComboBox_DeviceName);
+            this.uiPanel1.Controls.Add(this.uiLabel3);
+            this.uiPanel1.Controls.Add(this.uiDatePickerEnd);
+            this.uiPanel1.Controls.Add(this.uiButton1);
+            this.uiPanel1.Controls.Add(this.uiDatePickerStart);
+            this.uiPanel1.Controls.Add(this.uiLabel2);
+            this.uiPanel1.Controls.Add(this.uiLabel1);
+            this.uiPanel1.Dock = System.Windows.Forms.DockStyle.Top;
+            this.uiPanel1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
+            this.uiPanel1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiPanel1.Location = new System.Drawing.Point(0, 0);
+            this.uiPanel1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiPanel1.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiPanel1.Name = "uiPanel1";
+            this.uiPanel1.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
+            this.uiPanel1.RectColor = System.Drawing.Color.Transparent;
+            this.uiPanel1.RectSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.None;
+            this.uiPanel1.Size = new System.Drawing.Size(1169, 49);
+            this.uiPanel1.TabIndex = 3;
+            this.uiPanel1.Text = null;
+            this.uiPanel1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // uiPanel3
             // 
@@ -258,15 +259,15 @@
             this.uiPanel3.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
             this.uiPanel3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiPanel3.ForeColor = System.Drawing.Color.Transparent;
-            this.uiPanel3.Location = new System.Drawing.Point(250, 49);
+            this.uiPanel3.Location = new System.Drawing.Point(0, 0);
             this.uiPanel3.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.uiPanel3.MinimumSize = new System.Drawing.Size(1, 1);
             this.uiPanel3.Name = "uiPanel3";
             this.uiPanel3.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
             this.uiPanel3.RectColor = System.Drawing.Color.Transparent;
-            this.uiPanel3.Size = new System.Drawing.Size(926, 692);
+            this.uiPanel3.Size = new System.Drawing.Size(1169, 788);
             this.uiPanel3.Style = Sunny.UI.UIStyle.Custom;
-            this.uiPanel3.TabIndex = 2;
+            this.uiPanel3.TabIndex = 5;
             this.uiPanel3.Text = "uiPanel3";
             this.uiPanel3.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -281,9 +282,9 @@
             this.panel1.Controls.Add(this.ir_Image_preview_btn);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.panel1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
-            this.panel1.Location = new System.Drawing.Point(0, 644);
+            this.panel1.Location = new System.Drawing.Point(0, 740);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(926, 48);
+            this.panel1.Size = new System.Drawing.Size(1169, 48);
             this.panel1.TabIndex = 0;
             // 
             // label2
@@ -348,7 +349,7 @@
             this.ir_image_next_btn.Image = ((System.Drawing.Image)(resources.GetObject("ir_image_next_btn.Image")));
             this.ir_image_next_btn.ImageLocation = "";
             this.ir_image_next_btn.ImageOffset = new System.Drawing.Point(12, 0);
-            this.ir_image_next_btn.Location = new System.Drawing.Point(273, 3);
+            this.ir_image_next_btn.Location = new System.Drawing.Point(359, 3);
             this.ir_image_next_btn.Name = "ir_image_next_btn";
             this.ir_image_next_btn.Size = new System.Drawing.Size(50, 42);
             this.ir_image_next_btn.TabIndex = 1;
@@ -365,7 +366,7 @@
             this.ir_Image_preview_btn.Image = ((System.Drawing.Image)(resources.GetObject("ir_Image_preview_btn.Image")));
             this.ir_Image_preview_btn.ImageLocation = "";
             this.ir_Image_preview_btn.ImageOffset = new System.Drawing.Point(12, 0);
-            this.ir_Image_preview_btn.Location = new System.Drawing.Point(207, 2);
+            this.ir_Image_preview_btn.Location = new System.Drawing.Point(275, 3);
             this.ir_Image_preview_btn.Name = "ir_Image_preview_btn";
             this.ir_Image_preview_btn.Size = new System.Drawing.Size(50, 42);
             this.ir_Image_preview_btn.TabIndex = 0;
@@ -374,20 +375,19 @@
             this.ir_Image_preview_btn.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.ir_Image_preview_btn.Click += new System.EventHandler(this.Ir_Image_preview_btn_Click);
             // 
-            // FormVehicleData
+            // FAlarmData
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.ClientSize = new System.Drawing.Size(1176, 741);
-            this.Controls.Add(this.uiPanel3);
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.ClientSize = new System.Drawing.Size(1169, 788);
             this.Controls.Add(this.uiPanel2);
             this.Controls.Add(this.uiPanel1);
-            this.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.Name = "FormVehicleData";
-            this.Text = "FormVehicleData";
-            this.Load += new System.EventHandler(this.FormVehicleData_Load);
-            this.uiPanel1.ResumeLayout(false);
+            this.Controls.Add(this.uiPanel3);
+            this.Name = "FAlarmData";
+            this.Text = "FAlarmData";
+            this.Load += new System.EventHandler(this.FAlarmData_Load);
             this.uiPanel2.ResumeLayout(false);
+            this.uiPanel1.ResumeLayout(false);
             this.uiPanel3.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
@@ -400,25 +400,24 @@
         }
 
         #endregion
-
-        private Sunny.UI.UIPanel uiPanel1;
-        private Sunny.UI.UIPanel uiPanel2;
-        private Sunny.UI.UIPanel uiPanel3;
+        private Sunny.UI.UILabel uiLabel4;
+        private Sunny.UI.UIComboBox uiComboBox_DeviceName;
+        private Sunny.UI.UILabel uiLabel3;
+        private Sunny.UI.UIDatePicker uiDatePickerEnd;
+        private Sunny.UI.UIButton uiButton1;
+        private Sunny.UI.UIDatePicker uiDatePickerStart;
         private Sunny.UI.UILabel uiLabel2;
         private Sunny.UI.UILabel uiLabel1;
-        private Sunny.UI.UIButton uiButton1;
-        private System.Windows.Forms.ListView listView_VehicleData;
-        private Sunny.UI.UIDatePicker uiDatePickerStart;
-        private Sunny.UI.UIDatePicker uiDatePickerEnd;
+        private System.Windows.Forms.ListView listView_AlarmData;
+        private Sunny.UI.UIPanel uiPanel2;
+        private Sunny.UI.UIPanel uiPanel1;
+        private Sunny.UI.UIPanel uiPanel3;
         private System.Windows.Forms.Panel panel1;
-        private Sunny.UI.UIImageButton ir_image_next_btn;
-        private Sunny.UI.UIImageButton ir_Image_preview_btn;
         private System.Windows.Forms.Label label2;
         private Sunny.UI.UIImageButton op_image_next_btn;
         private Sunny.UI.UIImageButton op_image_preview_btn;
         private System.Windows.Forms.Label label1;
-        private Sunny.UI.UILabel uiLabel3;
-        private Sunny.UI.UIComboBox uiComboBox_DeviceName;
-        private Sunny.UI.UILabel uiLabel4;
+        private Sunny.UI.UIImageButton ir_image_next_btn;
+        private Sunny.UI.UIImageButton ir_Image_preview_btn;
     }
 }

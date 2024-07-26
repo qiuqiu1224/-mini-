@@ -40,8 +40,14 @@
             this.startRecordBtn = new Sunny.UI.UISymbolButton();
             this.stopPrewviewBtn = new Sunny.UI.UISymbolButton();
             this.startPrewviewBtn = new Sunny.UI.UISymbolButton();
-            this.uiNavMenu1 = new Sunny.UI.UINavMenu();
+            this.listView_trainInfo = new System.Windows.Forms.ListView();
+            this.uiSplitContainer1 = new Sunny.UI.UISplitContainer();
+            this.uiLabel1 = new Sunny.UI.UILabel();
             this.uiPanel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.uiSplitContainer1)).BeginInit();
+            this.uiSplitContainer1.Panel1.SuspendLayout();
+            this.uiSplitContainer1.Panel2.SuspendLayout();
+            this.uiSplitContainer1.SuspendLayout();
             this.SuspendLayout();
             // 
             // uiPanel1
@@ -322,37 +328,68 @@
             this.startPrewviewBtn.TipsText = "开始采集";
             this.startPrewviewBtn.Click += new System.EventHandler(this.StartPrewviewBtn_Click);
             // 
-            // uiNavMenu1
+            // listView_trainInfo
             // 
-            this.uiNavMenu1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.uiNavMenu1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.uiNavMenu1.Dock = System.Windows.Forms.DockStyle.Left;
-            this.uiNavMenu1.DrawMode = System.Windows.Forms.TreeViewDrawMode.OwnerDrawAll;
-            this.uiNavMenu1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.uiNavMenu1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiNavMenu1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.uiNavMenu1.FullRowSelect = true;
-            this.uiNavMenu1.ItemHeight = 50;
-            this.uiNavMenu1.Location = new System.Drawing.Point(0, 49);
-            this.uiNavMenu1.MenuStyle = Sunny.UI.UIMenuStyle.Custom;
-            this.uiNavMenu1.Name = "uiNavMenu1";
-            this.uiNavMenu1.ShowLines = false;
-            this.uiNavMenu1.Size = new System.Drawing.Size(250, 495);
-            this.uiNavMenu1.TabIndex = 4;
-            this.uiNavMenu1.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiNavMenu1.Visible = false;
+            this.listView_trainInfo.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
+            this.listView_trainInfo.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listView_trainInfo.ForeColor = System.Drawing.SystemColors.Menu;
+            this.listView_trainInfo.HideSelection = false;
+            this.listView_trainInfo.Location = new System.Drawing.Point(0, 0);
+            this.listView_trainInfo.Name = "listView_trainInfo";
+            this.listView_trainInfo.Size = new System.Drawing.Size(248, 442);
+            this.listView_trainInfo.TabIndex = 5;
+            this.listView_trainInfo.UseCompatibleStateImageBehavior = false;
+            // 
+            // uiSplitContainer1
+            // 
+            this.uiSplitContainer1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
+            this.uiSplitContainer1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.uiSplitContainer1.Cursor = System.Windows.Forms.Cursors.Default;
+            this.uiSplitContainer1.Dock = System.Windows.Forms.DockStyle.Left;
+            this.uiSplitContainer1.Location = new System.Drawing.Point(0, 49);
+            this.uiSplitContainer1.MinimumSize = new System.Drawing.Size(20, 20);
+            this.uiSplitContainer1.Name = "uiSplitContainer1";
+            this.uiSplitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // uiSplitContainer1.Panel1
+            // 
+            this.uiSplitContainer1.Panel1.Controls.Add(this.uiLabel1);
+            this.uiSplitContainer1.Panel1MinSize = 1;
+            // 
+            // uiSplitContainer1.Panel2
+            // 
+            this.uiSplitContainer1.Panel2.Controls.Add(this.listView_trainInfo);
+            this.uiSplitContainer1.Size = new System.Drawing.Size(250, 495);
+            this.uiSplitContainer1.SplitterWidth = 1;
+            this.uiSplitContainer1.TabIndex = 6;
+            // 
+            // uiLabel1
+            // 
+            this.uiLabel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.uiLabel1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiLabel1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.uiLabel1.Location = new System.Drawing.Point(0, 0);
+            this.uiLabel1.Name = "uiLabel1";
+            this.uiLabel1.Size = new System.Drawing.Size(248, 48);
+            this.uiLabel1.TabIndex = 0;
+            this.uiLabel1.Text = "当日过车信息";
+            this.uiLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // FMonitor
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
             this.ClientSize = new System.Drawing.Size(892, 544);
-            this.Controls.Add(this.uiNavMenu1);
+            this.Controls.Add(this.uiSplitContainer1);
             this.Controls.Add(this.uiPanel1);
             this.Name = "FMonitor";
             this.Style = Sunny.UI.UIStyle.Custom;
             this.Text = "FormMonitor";
             this.uiPanel1.ResumeLayout(false);
+            this.uiSplitContainer1.Panel1.ResumeLayout(false);
+            this.uiSplitContainer1.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.uiSplitContainer1)).EndInit();
+            this.uiSplitContainer1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -360,7 +397,6 @@
         #endregion
 
         protected Sunny.UI.UIPanel uiPanel1;
-        private Sunny.UI.UINavMenu uiNavMenu1;
         private Sunny.UI.UISymbolButton startPrewviewBtn;
         private Sunny.UI.UISymbolButton stopPrewviewBtn;
         private Sunny.UI.UISymbolButton startRecordBtn;
@@ -371,5 +407,8 @@
         private Sunny.UI.UISymbolButton drawRectBtn;
         private Sunny.UI.UISymbolButton drawCircleBtn;
         private Sunny.UI.UISymbolButton deleteAllDrawBtn;
+        private System.Windows.Forms.ListView listView_trainInfo;
+        private Sunny.UI.UISplitContainer uiSplitContainer1;
+        private Sunny.UI.UILabel uiLabel1;
     }
 }

@@ -69,5 +69,13 @@ namespace PreviewDemo
         {
 
         }
+
+        private void FMonitor_Load(object sender, EventArgs e)
+        {
+            //listView_trainInfo.Top = uiPanel3.Bottom - 10;
+            //listView_trainInfo.Left = uiPanel3.Left;
+            //listView_trainInfo.Height = 100;
+
+        }
     }
 }

@@ -13,6 +13,10 @@ namespace PreviewDemo
         public SystemParam() { }
 
         //设备数量
+        [XmlElement(Type = typeof(string), ElementName = "StationName")]
+        public string stationName = "三间房站";
+
+        //设备数量
         [XmlElement(Type = typeof(int), ElementName = "DeviceCount")]
         public int deviceCount = 2;
 

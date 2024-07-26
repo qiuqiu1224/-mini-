@@ -145,6 +145,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FAlarmData.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FAlarmData.Designer.cs">
+      <DependentUpon>FAlarmData.cs</DependentUpon>
+    </Compile>
     <Compile Include="FMonitor.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -177,6 +183,7 @@
     </Compile>
     <Compile Include="SystemParam.cs" />
     <Compile Include="TicksTimeConvert.cs" />
+    <Compile Include="TrainIndex.cs" />
     <Compile Include="UserControl1.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -204,6 +211,9 @@
     <Compile Include="Preview.cs">
       <SubType>Form</SubType>
     </Compile>
+    <EmbeddedResource Include="FAlarmData.resx">
+      <DependentUpon>FAlarmData.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FMonitor.resx">
       <DependentUpon>FMonitor.cs</DependentUpon>
     </EmbeddedResource>

@@ -13,9 +13,8 @@ using Sunny.UI;
 
 namespace PreviewDemo
 {
-    public partial class FormVehicleData : UIPage
+    public partial class FAlarmData : UIPage
     {
-
         const uint DISPLAYWND_GAP = 1;//监控画面的间隙
         const uint DISPLAYWND_MARGIN_LEFT = 1;//监控画面距离左边控件的距离
         const uint DISPLAYWND_MARGIN_TOP = 1; //监控画面距离上边的距离
@@ -34,8 +33,6 @@ namespace PreviewDemo
         string[] subdirectoryEntries_0;
         string[] subdirectoryEntries_1;
 
-        string[] opImageDirectoryEntries_0;
-
         int currentIrImageIndex = 0;
         int currentOpImageIndex = 0;
 
@@ -46,14 +43,20 @@ namespace PreviewDemo
         VideoCapture videoCapture;
         VideoInfo videoInfo;
 
-
-        public FormVehicleData()
+        public FAlarmData()
         {
             InitializeComponent();
             initData();
-
-            //SetFmonitorDisplayWnds(1,2);
         }
+
+        struct VideoInfo
+        {
+            public int hour;
+            public int min;
+            public int sec;
+            public int millsec;
+        }
+
 
         private void initData()
         {
@@ -71,25 +74,189 @@ namespace PreviewDemo
             }
         }
 
+
+        private void FAlarmData_Load(object sender, EventArgs e)
+        {
+            this.listView_AlarmData.View = View.Details;
+            if (listView_AlarmData.Columns.Count == 0)
+            {
+                ColumnHeader columnHeader = new ColumnHeader();
+                columnHeader.Text = "序号";
+                columnHeader.Width = listView_AlarmData.Width * 3 / 10;
+                columnHeader.TextAlign = HorizontalAlignment.Center;
+                listView_AlarmData.Columns.Add(columnHeader);
+
+                ColumnHeader columnHeader1 = new ColumnHeader();
+                columnHeader1.Text = "探测时间";
+                columnHeader1.Width = listView_AlarmData.Width * 7 / 10;
+                columnHeader1.TextAlign = HorizontalAlignment.Center;
+                listView_AlarmData.Columns.Add(columnHeader1);
+                listView_AlarmData.FullRowSelect = true;
+
+
+            }
+
+            SetFmonitorDisplayWnds(1, 2);
+            uiPanel3.SendToBack();
+
+            label1.Left = listView_AlarmData.Width + panel1.Width / 8;
+            label1.Visible = false;
+
+            ir_Image_preview_btn.Left = label1.Right + 25;
+            ir_Image_preview_btn.Visible = false;
+            ir_image_next_btn.Left = ir_Image_preview_btn.Right + 25;
+            ir_image_next_btn.Visible = false;
+
+            label2.Left = listView_AlarmData.Width + panel1.Width * 5 / 8;
+            label2.Visible = false;
+            op_image_preview_btn.Left = label2.Right + 25;
+            op_image_preview_btn.Visible = false;
+            op_image_next_btn.Left = op_image_preview_btn.Right + 25;
+            op_image_next_btn.Visible = false;
+
+            uiDatePickerStart.Value = DateTime.Now;
+            uiDatePickerEnd.Value = DateTime.Now;
+
+            uiComboBox_DeviceName.Items.Add(Globals.systemParam.deviceName_0);
+            if (Globals.systemParam.deviceCount > 1)
+            {
+                uiComboBox_DeviceName.Items.Add(Globals.systemParam.deviceName_1);
+            }
+
+            uiComboBox_DeviceName.SelectedIndex = 0;
+        }
+
+        /// <summary>
+        /// 设置过车界面图像显示控件布局
+        /// </summary>
+        /// <param name="rowNum">行数</param>
+        /// <param name="colNum">列数</param>
+
+        private void SetFmonitorDisplayWnds(uint rowNum, uint colNum)
+        {
+
+            uint w = (uint)(this.Width - listView_AlarmData.Width);
+
+            uint h = (uint)(this.Height - uiPanel1.Height);
+
+
+            //先计算显示窗口的位置和大小，依据为：在不超过主窗口大小的情况下尽可能大，同时严格保持4:3的比例显示
+            uint real_width = w;
+            uint real_height = h;
+
+            uint display_width = (real_width - DISPLAYWND_MARGIN_LEFT * 2 - (colNum - 1) * DISPLAYWND_GAP) / colNum;//单个相机显示区域的宽度(还未考虑比例)
+            uint display_height = (real_height - DISPLAYWND_MARGIN_TOP * 2 - (rowNum - 1) * DISPLAYWND_GAP) / rowNum;//单个相机显示区域的高度(还未考虑比例)
+
+            if (display_width * 3 >= display_height * 4)//考虑比例
+            {
+                uint ret = display_height % 3;
+                if (ret != 0)
+                {
+                    display_height -= ret;
+                }
+                display_width = display_height * 4 / 3;
+            }
+            else
+            {
+                uint ret = display_width % 4;
+                if (ret != 0)
+                {
+                    display_width -= ret;
+                }
+                display_height = display_width * 3 / 4;
+            }
+
+
+
+            for (uint i = 0; i < rowNum; i++)
+            {
+                uint y = (uint)uiPanel1.Height + (real_height - rowNum * display_height - DISPLAYWND_GAP * (rowNum - 1)) / 2 + (display_height + DISPLAYWND_GAP) * i;
+                for (uint j = 0; j < colNum; j++)
+                {
+                    //uint x = (uint)fmonitor.GetControl("uiNavMenu1").Width + (real_width - colNum * display_width - DISPLAYWND_GAP * (colNum - 1)) / 2 + (display_width + DISPLAYWND_GAP) * j;
+                    uint x = (uint)listView_AlarmData.Width + (real_width - colNum * display_width - DISPLAYWND_GAP * (colNum - 1)) / 2 + (display_width + DISPLAYWND_GAP) * j;
+
+                    pics[i * 2 + j] = new PictureBox();
+                    pics[i * 2 + j].Left = (int)x;
+                    pics[i * 2 + j].Top = (int)y;
+                    pics[i * 2 + j].Width = (int)display_width;
+                    pics[i * 2 + j].Height = (int)display_height;
+                    pics[i * 2 + j].Show();
+                    pics[i * 2 + j].BackColor = Color.FromArgb(45, 45, 53);
+                    //pics[i * 2 + j].Image = Image.FromFile(@"D:\C#\IRAY_Test\IR_Tmp_Measurement\bin\Debug\AlarmImage\20230330105027_Visual.jpg");
+                    //pics[i * 2 + j].Name = "pic" + (i * 2 + j).ToString();
+                    pics[i * 2 + j].SizeMode = PictureBoxSizeMode.StretchImage;
+                    //pics[i * 2 + j].BringToFront();
+
+
+                    this.Controls.Add(pics[i * 2 + j]);
+
+                    //labels[i * 2 + j] = new TransparentLabel();
+                    //labels[i * 2 + j].Left = (int)x;
+                    //labels[i * 2 + j].Top = (int)y;
+                    ////labels[i * 2 + j].Text = "轴" + (i * 2 + j + 1).ToString();
+                    //labels[i * 2 + j].ForeColor = Color.WhiteSmoke;
+                    //labels[i * 2 + j].BackColor = Color.Transparent;
+                    //// label.Show();
+
+                    //fmonitor.Controls.Add(labels[i * 2 + j]);
+                    ////pic[i * 2 + j].Controls.Add(label);
+                    ////label.Parent = fmonitor;
+                    //labels[i * 2 + j].BringToFront();
+
+                    switch (i * 2 + j)
+                    {
+                        case 0:
+                            //pics[i * 2 + j].Tag = 0;
+                            //pics[i * 2 + j].Paint += new PaintEventHandler(Pics0_Paint);
+                            //pics[i * 2 + j].MouseClick += new MouseEventHandler(Pics0_MouseClick);
+                            //pics[i * 2 + j].MouseDown += new MouseEventHandler(Pics0_MouseDown);
+                            //pics[i * 2 + j].MouseMove += new MouseEventHandler(Pics0_MouseMove);
+                            //pics[i * 2 + j].MouseLeave += new EventHandler(Pics0_MouseLeave);
+                            ////pics[i * 2 + j].MouseHover += new EventHandler(Pics0_MouseUp);
+                            //pics[i * 2 + j].MouseUp += new MouseEventHandler(Pics0_MouseUp);
+                            break;
+                        case 1:
+                            //pics[i * 2 + j].Tag = 0;
+                            //pics[i * 2 + j].Paint += new PaintEventHandler(Pics1_Paint);
+                            //pics[i * 2 + j].Click += new EventHandler(Pics1_Click);
+                            break;
+                        case 2:
+                            //pics[i * 2 + j].Tag = 0;
+                            //pics[i * 2 + j].Paint += new PaintEventHandler(Pics2_Paint);
+                            //pics[i * 2 + j].Click += new EventHandler(Pics2_Click);
+                            break;
+                        case 3:
+                            //pics[i * 2 + j].Tag = 0;
+                            //pics[i * 2 + j].Paint += new PaintEventHandler(Pics3_Paint);
+                            //pics[i * 2 + j].Click += new EventHandler(Pics3_Click);
+                            break;
+
+                    }
+
+                }
+
+            }
+        }
+
         private void UiButton1_Click(object sender, EventArgs e)
         {
             directoryFileNames[0].Clear();
             pics[0].Image = null;
             pics[1].Image = null;
 
-            listView_VehicleData.Items.Clear();
-            //if (listView_VehicleData.Items.Count >= 1)
+            listView_AlarmData.Items.Clear();
+            //if (listView_AlarmData.Items.Count >= 1)
             //{
-            //    for (int j = listView_VehicleData.Items.Count - 1; j >= 0; j--)
+            //    for (int j = listView_AlarmData.Items.Count - 1; j >= 0; j--)
             //    {
-            //        listView_VehicleData.Items.RemoveAt(j);
+            //        listView_AlarmData.Items.RemoveAt(j);
             //    }
             //}
 
             //string folderPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd") + "\\" + Globals.systemParam.ip_0; // 
-            string folderPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd"); // 
-            string opImageFolderPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd") + "\\" + "OP_Image";
-           
+            string folderPath = Globals.RootSavePath + "\\" + "AlarmReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd"); // 
+            string opImageFolderPath = Globals.RootSavePath + "\\" + "AlarmReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd") + "\\" + "OP_Image";
 
             DirectoryInfo imageDirectoryInfo = new DirectoryInfo(folderPath);
             if (imageDirectoryInfo.Exists)
@@ -116,12 +283,12 @@ namespace PreviewDemo
                     ListViewItem item = new ListViewItem();
 
                     item.SubItems[0].Text = (count + 1).ToString();
-                    listView_VehicleData.Columns[1].TextAlign = HorizontalAlignment.Left;
-                    listView_VehicleData.Columns[0].TextAlign = HorizontalAlignment.Right;
+                    listView_AlarmData.Columns[1].TextAlign = HorizontalAlignment.Left;
+                    listView_AlarmData.Columns[0].TextAlign = HorizontalAlignment.Right;
 
                     fileName = fileName.Substring(0, 4) + "-" + fileName.Substring(4, 2) + "-" + fileName.Substring(6, 2) + " " + fileName.Substring(9, 2) + ":" + fileName.Substring(11, 2);
                     item.SubItems.Add(fileName);
-                    listView_VehicleData.Items.Add(item);
+                    listView_AlarmData.Items.Add(item);
 
                     count++;
 
@@ -159,69 +326,11 @@ namespace PreviewDemo
             }
             else
             {
-                uiLabel3.Text = "没有过车数据";
+                uiLabel3.Text = "没有报警数据";
             }
         }
 
-
-
-        private void FormVehicleData_Load(object sender, EventArgs e)
-        {
-
-            this.listView_VehicleData.View = View.Details;
-            if (listView_VehicleData.Columns.Count == 0)
-            {
-                ColumnHeader columnHeader = new ColumnHeader();
-                columnHeader.Text = "序号";
-                columnHeader.Width = listView_VehicleData.Width * 3 / 10;
-                columnHeader.TextAlign = HorizontalAlignment.Center;
-                listView_VehicleData.Columns.Add(columnHeader);
-
-                ColumnHeader columnHeader1 = new ColumnHeader();
-                columnHeader1.Text = "探测时间";
-                columnHeader1.Width = listView_VehicleData.Width * 7 / 10;
-                columnHeader1.TextAlign = HorizontalAlignment.Center;
-                listView_VehicleData.Columns.Add(columnHeader1);
-                listView_VehicleData.FullRowSelect = true;
-
-
-            }
-
-            SetFmonitorDisplayWnds(1, 2);
-            uiPanel3.SendToBack();
-
-            label1.Left = listView_VehicleData.Width + panel1.Width / 8;
-            label1.Visible = false;
-
-            ir_Image_preview_btn.Left = label1.Right + 25;
-            ir_Image_preview_btn.Visible = false;
-            ir_image_next_btn.Left = ir_Image_preview_btn.Right + 25;
-            ir_image_next_btn.Visible = false;
-
-            label2.Left = listView_VehicleData.Width + panel1.Width * 5 / 8;
-            label2.Visible = false;
-            op_image_preview_btn.Left = label2.Right + 25;
-            op_image_preview_btn.Visible = false;
-            op_image_next_btn.Left = op_image_preview_btn.Right + 25;
-            op_image_next_btn.Visible = false;
-
-            uiDatePickerStart.Value = DateTime.Now;
-            uiDatePickerEnd.Value = DateTime.Now;
-
-            uiComboBox_DeviceName.Items.Add(Globals.systemParam.deviceName_0);
-            if (Globals.systemParam.deviceCount > 1)
-            {
-                uiComboBox_DeviceName.Items.Add(Globals.systemParam.deviceName_1);
-            }
-
-            uiComboBox_DeviceName.SelectedIndex = 0;
-        }
-
-
-
-
-
-        private void ListView_VehicleData_MouseClick(object sender, MouseEventArgs e)
+        private void ListView_AlarmData_MouseClick(object sender, MouseEventArgs e)
         {
             pics[0].Image = null;
             pics[1].Image = null;
@@ -232,7 +341,7 @@ namespace PreviewDemo
                 currentIrImageIndex = 0;
                 irImageListPath[0].Clear();
 
-                ListViewHitTestInfo info = listView_VehicleData.HitTest(e.X, e.Y);
+                ListViewHitTestInfo info = listView_AlarmData.HitTest(e.X, e.Y);
                 item = info.Item;
 
                 if (item != null)
@@ -365,7 +474,7 @@ namespace PreviewDemo
 
                     opJpegFiles = Directory.GetFiles(directoryFileNames[0][item.Index] + "\\" + "OP_Image");//读取所有红外图像文件
                     OpImageFileNames[0].Clear();
-                    OpImageFileNames[0]= Globals.GetOPImages(irImageFilePath, opJpegFiles);
+                    OpImageFileNames[0] = Globals.GetOPImages(irImageFilePath, opJpegFiles);
 
                     currentOpImageIndex = 0;
                     img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
@@ -436,301 +545,28 @@ namespace PreviewDemo
             }
         }
 
-        struct VideoInfo
-        {
-            public int hour;
-            public int min;
-            public int sec;
-            public int millsec;
-        }
-
-
-
-        private void GetVideoFrames(string irImageName, List<Mat> matList)
-        {
-            matList.Clear();
-            //currentIrImageIndex = 0;
-
-
-            // 检查视频是否成功打开
-            if (videoCapture.IsOpened())
-            {
-
-                //FileInfo vedioFileInfo = new FileInfo(Application.StartupPath + "\\" + "20240715_094710_390.mp4");
-                //string vedioFileName = vedioFileInfo.Name;
-
-
-                string IRImageFileNameWithoutExtension = Path.GetFileNameWithoutExtension(irImageName);
-                string IRImageHour = IRImageFileNameWithoutExtension.Substring(9, 2);
-                string IRImageMin = IRImageFileNameWithoutExtension.Substring(11, 2);
-                string IRImageSec = IRImageFileNameWithoutExtension.Substring(13, 2);
-                string IRImageMillsec = IRImageFileNameWithoutExtension.Substring(16, 3);
-
-
-                int timeDiff = Convert.ToUInt16(IRImageHour) * 60 * 60 * 1000 + Convert.ToUInt16(IRImageMin) * 60 * 1000 + Convert.ToUInt16(IRImageSec) * 1000 + Convert.ToUInt16(IRImageMillsec)
-                    - videoInfo.hour * 60 * 60 * 1000 - videoInfo.min * 60 * 1000 - videoInfo.sec * 1000 - Convert.ToUInt16(videoInfo.millsec);
-
-
-                int frameIndex = (int)(timeDiff * videoCapture.Fps / 1000);
-
-                int startFrameIndex = 0;
-                int endFrameIndex = 0;
-
-                if (frameIndex - 5 > 0)
-                {
-                    startFrameIndex = frameIndex - 5;
-                }
-                else
-                {
-                    startFrameIndex = 0;
-                }
-
-
-                if (frameIndex + 4 < videoCapture.FrameCount)
-                {
-                    endFrameIndex = frameIndex + 4;
-                }
-                else
-                {
-                    endFrameIndex = videoCapture.FrameCount - 1;
-                }
-
-                for (int i = startFrameIndex; i <= endFrameIndex; i++)
-                {
-                    videoCapture.Set(CaptureProperty.PosFrames, i);
-                    using (Mat frame = new Mat())
-                    {
-                        videoCapture.Read(frame);
-                        if (!frame.Empty())
-                        {
-
-                            matList.Add(frame.Clone());
-                            // 这里可以对帧frame进行处理
-                            // 例如保存帧到文件
-                            //string outputPath = $"frame_{i}.png";
-                            //Cv2.ImWrite(outputPath, frame);
-
-                        }
-                    }
-                }
-
-            }
-            else
-            {
-                Globals.Log("不能打开可见光视频文件");
-                return;
-            }
-
-
-        }
-
-        /// <summary>
-        /// 设置过车界面图像显示控件布局
-        /// </summary>
-        /// <param name="rowNum">行数</param>
-        /// <param name="colNum">列数</param>
-
-        private void SetFmonitorDisplayWnds(uint rowNum, uint colNum)
+        private void Op_image_next_btn_Click(object sender, EventArgs e)
         {
 
-            uint w = (uint)(this.Width - listView_VehicleData.Width);
-
-            uint h = (uint)(this.Height - uiPanel1.Height);
-
-
-            //先计算显示窗口的位置和大小，依据为：在不超过主窗口大小的情况下尽可能大，同时严格保持4:3的比例显示
-            uint real_width = w;
-            uint real_height = h;
-
-            uint display_width = (real_width - DISPLAYWND_MARGIN_LEFT * 2 - (colNum - 1) * DISPLAYWND_GAP) / colNum;//单个相机显示区域的宽度(还未考虑比例)
-            uint display_height = (real_height - DISPLAYWND_MARGIN_TOP * 2 - (rowNum - 1) * DISPLAYWND_GAP) / rowNum;//单个相机显示区域的高度(还未考虑比例)
-
-            if (display_width * 3 >= display_height * 4)//考虑比例
+            if ((currentOpImageIndex + 1) < OpImageFileNames[0].Count)
             {
-                uint ret = display_height % 3;
-                if (ret != 0)
-                {
-                    display_height -= ret;
-                }
-                display_width = display_height * 4 / 3;
-            }
-            else
-            {
-                uint ret = display_width % 4;
-                if (ret != 0)
-                {
-                    display_width -= ret;
-                }
-                display_height = display_width * 3 / 4;
-            }
-
-
-
-            for (uint i = 0; i < rowNum; i++)
-            {
-                uint y = (uint)uiPanel1.Height + (real_height - rowNum * display_height - DISPLAYWND_GAP * (rowNum - 1)) / 2 + (display_height + DISPLAYWND_GAP) * i;
-                for (uint j = 0; j < colNum; j++)
-                {
-                    //uint x = (uint)fmonitor.GetControl("uiNavMenu1").Width + (real_width - colNum * display_width - DISPLAYWND_GAP * (colNum - 1)) / 2 + (display_width + DISPLAYWND_GAP) * j;
-                    uint x = (uint)listView_VehicleData.Width + (real_width - colNum * display_width - DISPLAYWND_GAP * (colNum - 1)) / 2 + (display_width + DISPLAYWND_GAP) * j;
-
-                    pics[i * 2 + j] = new PictureBox();
-                    pics[i * 2 + j].Left = (int)x;
-                    pics[i * 2 + j].Top = (int)y;
-                    pics[i * 2 + j].Width = (int)display_width;
-                    pics[i * 2 + j].Height = (int)display_height;
-                    pics[i * 2 + j].Show();
-                    pics[i * 2 + j].BackColor = Color.FromArgb(45, 45, 53);
-                    //pics[i * 2 + j].Image = Image.FromFile(@"D:\C#\IRAY_Test\IR_Tmp_Measurement\bin\Debug\AlarmImage\20230330105027_Visual.jpg");
-                    //pics[i * 2 + j].Name = "pic" + (i * 2 + j).ToString();
-                    pics[i * 2 + j].SizeMode = PictureBoxSizeMode.StretchImage;
-                    //pics[i * 2 + j].BringToFront();
-
-
-                    this.Controls.Add(pics[i * 2 + j]);
-
-                    //labels[i * 2 + j] = new TransparentLabel();
-                    //labels[i * 2 + j].Left = (int)x;
-                    //labels[i * 2 + j].Top = (int)y;
-                    ////labels[i * 2 + j].Text = "轴" + (i * 2 + j + 1).ToString();
-                    //labels[i * 2 + j].ForeColor = Color.WhiteSmoke;
-                    //labels[i * 2 + j].BackColor = Color.Transparent;
-                    //// label.Show();
-
-                    //fmonitor.Controls.Add(labels[i * 2 + j]);
-                    ////pic[i * 2 + j].Controls.Add(label);
-                    ////label.Parent = fmonitor;
-                    //labels[i * 2 + j].BringToFront();
-
-                    switch (i * 2 + j)
-                    {
-                        case 0:
-                            //pics[i * 2 + j].Tag = 0;
-                            //pics[i * 2 + j].Paint += new PaintEventHandler(Pics0_Paint);
-                            //pics[i * 2 + j].MouseClick += new MouseEventHandler(Pics0_MouseClick);
-                            //pics[i * 2 + j].MouseDown += new MouseEventHandler(Pics0_MouseDown);
-                            //pics[i * 2 + j].MouseMove += new MouseEventHandler(Pics0_MouseMove);
-                            //pics[i * 2 + j].MouseLeave += new EventHandler(Pics0_MouseLeave);
-                            ////pics[i * 2 + j].MouseHover += new EventHandler(Pics0_MouseUp);
-                            //pics[i * 2 + j].MouseUp += new MouseEventHandler(Pics0_MouseUp);
-                            break;
-                        case 1:
-                            //pics[i * 2 + j].Tag = 0;
-                            //pics[i * 2 + j].Paint += new PaintEventHandler(Pics1_Paint);
-                            //pics[i * 2 + j].Click += new EventHandler(Pics1_Click);
-                            break;
-                        case 2:
-                            //pics[i * 2 + j].Tag = 0;
-                            //pics[i * 2 + j].Paint += new PaintEventHandler(Pics2_Paint);
-                            //pics[i * 2 + j].Click += new EventHandler(Pics2_Click);
-                            break;
-                        case 3:
-                            //pics[i * 2 + j].Tag = 0;
-                            //pics[i * 2 + j].Paint += new PaintEventHandler(Pics3_Paint);
-                            //pics[i * 2 + j].Click += new EventHandler(Pics3_Click);
-                            break;
-
-                    }
-
-                }
+                currentOpImageIndex += 1;
+                label2.Text = "可见光图像 共" + OpImageFileNames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
+                Mat img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
+                pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
 
             }
         }
 
-
-
-        private void Ir_Image_preview_btn_Click(object sender, EventArgs e)
+        private void Op_image_preview_btn_Click(object sender, EventArgs e)
         {
 
-            if ((currentIrImageIndex - 1) >= 0)
+            if ((currentOpImageIndex - 1) >= 0)
             {
-                currentIrImageIndex -= 1;
-                Mat img = Cv2.ImRead(irImageListPath[0][currentIrImageIndex]);
-                //Cv2.Line(img, 0, 0, 100, 100, OpenCvSharp.Scalar.FromRgb(0, 255, 0), 2);
-
-                string tempFilePath = directoryFileNames[0][item.Index] + "\\" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(0, 20)
-                  + "temp" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(22) + ".dat";
-                float[] tempDatas = Globals.GetTempFileToArray(tempFilePath);
-                List<float> tempDataList = new List<float>();
-                tempDataList = tempDatas.ToList();
-                float maxTemp = tempDataList.Max();
-                int index = tempDataList.IndexOf(maxTemp);
-                int maxTempY = index / TEMP_WIDTH;
-                int maxTempX = index % TEMP_WIDTH;
-
-
-                //Cv2.Line(img, 0, 0, 100, 100, OpenCvSharp.Scalar.FromRgb(0, 255, 0), 2);
-
-                OpenCvSharp.Point cor;
-                cor.X = maxTempX;
-                cor.Y = maxTempY;
-
-                //cor.X = 100;
-                //cor.Y = 100;
-
-                Globals.DrawCross(img, cor, OpenCvSharp.Scalar.FromRgb(220, 20, 60), 15, 1);
-
-                //cor.X = 100;
-                //cor.Y = 100;
-
-                Globals.DrawText(img, maxTemp.ToString("F1"), cor);
-                //Cv2.PutText(img, maxTemp.ToString(), new OpenCvSharp.Point(cor.X + 3, cor.Y + 20), OpenCvSharp.HersheyFonts.HersheySimplex, 0.8, OpenCvSharp.Scalar.Green, 1);
-                pics[0].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
-                label1.Text = "红外图像 共" + irImageListPath[0].Count + "张 第" + (currentIrImageIndex + 1) + "张";
-
-                string irImageFilePath = Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]);
-
-                string[] opJpegFiles;
-                opJpegFiles = Directory.GetFiles(directoryFileNames[0][item.Index] + "\\" + "OP_Image");//读取所有红外图像文件
-                OpImageFileNames[0].Clear();
-                OpImageFileNames[0] = Globals.GetOPImages(irImageFilePath, opJpegFiles);
-
-                currentOpImageIndex = 0;
-                img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
+                currentOpImageIndex -= 1;
+                Mat img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
                 pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
                 label2.Text = "可见光图像 共" + OpImageFileNames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
-
-                //GetVideoFrames(irImageListPath[0][currentIrImageIndex], OP_Frames[0]);
-                //if (OP_Frames[0].Count > 0)
-                //{
-
-
-                //    if (OP_Frames[0].Count >= 10)
-                //    {
-                //        currentOpImageIndex = 9;
-                //    }
-                //    else
-                //    {
-                //        if (OP_Frames[0].Count >= 4)
-                //        {
-                //            currentOpImageIndex = OP_Frames[0].Count - 1;
-                //        }
-                //        else
-                //        {
-                //            currentOpImageIndex = 0;
-                //        }
-
-                //    }
-
-
-                //    if (currentOpImageIndex <= OP_Frames[0].Count - 1)
-                //    {
-
-                //        pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(OP_Frames[0][currentOpImageIndex]);
-                //        label2.Text = "可见光图像 共" + OP_Frames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
-                //    }
-                //    else
-                //    {
-                //        Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频录制不全");
-                //    }
-                //}
-
-                //else
-                //{
-                //    Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频大小0KB");
-                //}
-
-
             }
         }
 
@@ -828,33 +664,105 @@ namespace PreviewDemo
                 //    Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频大小0KB");
                 //}
             }
+        }
+
+        private void ListView_AlarmData_SelectedIndexChanged(object sender, EventArgs e)
+        {
 
         }
 
-        private void Op_image_preview_btn_Click(object sender, EventArgs e)
+        private void Ir_Image_preview_btn_Click(object sender, EventArgs e)
         {
-
-            if ((currentOpImageIndex - 1) >= 0)
+            if ((currentIrImageIndex - 1) >= 0)
             {
-                currentOpImageIndex -= 1;
-                Mat img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
+                currentIrImageIndex -= 1;
+                Mat img = Cv2.ImRead(irImageListPath[0][currentIrImageIndex]);
+                //Cv2.Line(img, 0, 0, 100, 100, OpenCvSharp.Scalar.FromRgb(0, 255, 0), 2);
+
+                string tempFilePath = directoryFileNames[0][item.Index] + "\\" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(0, 20)
+                  + "temp" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(22) + ".dat";
+                float[] tempDatas = Globals.GetTempFileToArray(tempFilePath);
+                List<float> tempDataList = new List<float>();
+                tempDataList = tempDatas.ToList();
+                float maxTemp = tempDataList.Max();
+                int index = tempDataList.IndexOf(maxTemp);
+                int maxTempY = index / TEMP_WIDTH;
+                int maxTempX = index % TEMP_WIDTH;
+
+
+                //Cv2.Line(img, 0, 0, 100, 100, OpenCvSharp.Scalar.FromRgb(0, 255, 0), 2);
+
+                OpenCvSharp.Point cor;
+                cor.X = maxTempX;
+                cor.Y = maxTempY;
+
+                //cor.X = 100;
+                //cor.Y = 100;
+
+                Globals.DrawCross(img, cor, OpenCvSharp.Scalar.FromRgb(220, 20, 60), 15, 1);
+
+                //cor.X = 100;
+                //cor.Y = 100;
+
+                Globals.DrawText(img, maxTemp.ToString("F1"), cor);
+                //Cv2.PutText(img, maxTemp.ToString(), new OpenCvSharp.Point(cor.X + 3, cor.Y + 20), OpenCvSharp.HersheyFonts.HersheySimplex, 0.8, OpenCvSharp.Scalar.Green, 1);
+                pics[0].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
+                label1.Text = "红外图像 共" + irImageListPath[0].Count + "张 第" + (currentIrImageIndex + 1) + "张";
+
+                string irImageFilePath = Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]);
+
+                string[] opJpegFiles;
+                opJpegFiles = Directory.GetFiles(directoryFileNames[0][item.Index] + "\\" + "OP_Image");//读取所有红外图像文件
+                OpImageFileNames[0].Clear();
+                OpImageFileNames[0] = Globals.GetOPImages(irImageFilePath, opJpegFiles);
+
+                currentOpImageIndex = 0;
+                img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
                 pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
                 label2.Text = "可见光图像 共" + OpImageFileNames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
+
+                //GetVideoFrames(irImageListPath[0][currentIrImageIndex], OP_Frames[0]);
+                //if (OP_Frames[0].Count > 0)
+                //{
+
+
+                //    if (OP_Frames[0].Count >= 10)
+                //    {
+                //        currentOpImageIndex = 9;
+                //    }
+                //    else
+                //    {
+                //        if (OP_Frames[0].Count >= 4)
+                //        {
+                //            currentOpImageIndex = OP_Frames[0].Count - 1;
+                //        }
+                //        else
+                //        {
+                //            currentOpImageIndex = 0;
+                //        }
+
+                //    }
+
+
+                //    if (currentOpImageIndex <= OP_Frames[0].Count - 1)
+                //    {
+
+                //        pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(OP_Frames[0][currentOpImageIndex]);
+                //        label2.Text = "可见光图像 共" + OP_Frames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
+                //    }
+                //    else
+                //    {
+                //        Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频录制不全");
+                //    }
+                //}
+
+                //else
+                //{
+                //    Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频大小0KB");
+                //}
+
+
             }
-        }
-
-        private void Op_image_next_btn_Click(object sender, EventArgs e)
-        {
-
-            if ((currentOpImageIndex + 1) < OpImageFileNames[0].Count)
-            {
-                currentOpImageIndex += 1;
-                label2.Text = "可见光图像 共" + OpImageFileNames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
-                Mat img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
-                pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
-             
-            }
-
         }
     }
 }

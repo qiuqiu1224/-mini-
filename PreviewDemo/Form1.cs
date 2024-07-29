@@ -44,7 +44,7 @@ namespace PreviewDemo
             mouseFollowBtn, takePicBtn, drawRectBtn, drawCircleBtn, deleteAllDrawBtn;
 
         ListView trainListView;
-        private bool isStartRecord = false;//开始采集标志
+        private bool isTrainStart = false;//开始采集标志
         List<Socket> sockets = new List<Socket>();//连接红外相机获取温度socket
         private delegate string ConnectSocketDelegate(IPEndPoint ipep, Socket sock);
         List<Thread> threadsReceiveTmp = new List<Thread>();//接收温度数据线程
@@ -116,13 +116,16 @@ namespace PreviewDemo
         Thread GetImageDataThread;//获取温度数据线程
         Thread SaveOPImageThread;//保存可见光图像线程
 
-        byte cacheDataCount = 0;//缓存数据数量
+        byte cacheDataCount = 0;//红外热成像缓存数据数量
+
         List<byte>[] cacheData = new List<byte>[20];//红外图像和温度数据缓存集合
         private List<IntPtr> m_ptrRealHandles = new List<IntPtr>();
         string savePath;
         bool isSavingIrImg;//是否正在缓存红外图像和温度数据标志
-        bool isCopyOpImage;
-        bool isAlarm = false;
+        //bool isCopyOpImage;
+        //bool isAlarm = false;
+        List<bool> isAlarm = new List<bool>();
+        List<bool> isCopyOpImage = new List<bool>();
 
         List<string> saveReportPath = new List<string>();//保存过车数据根目录集合
         List<string> alarmReportPath = new List<string>();//保存报警数据根目录集合
@@ -316,18 +319,20 @@ namespace PreviewDemo
             //uiNavBar1.SelectedIndex = 0;
             //StartPrewview();
 
-
+            //登录设备0
             LoginDevice(0, Globals.systemParam.ip_0, Globals.systemParam.username_0, Globals.systemParam.psw_0, Globals.systemParam.port_0, cbLoginCallBack_0);
 
             Prewview(0, 0, 1, RealDataCallBack_OP_0, false);//预览可见光图像
 
             Prewview(0, 1, 2, RealDataCallBack_IR_0, false);//预览红外图像
 
+            //新建获取红外图像和温度数据线程
             GetImageDataThread = new Thread(GetImage);
             GetImageDataThread.IsBackground = true;
             GetImageDataThread.Priority = ThreadPriority.Highest;
             GetImageDataThread.Start();
 
+            //新建保存可见光图像线程
             SaveOPImageThread = new Thread(SaveOPImage);
             SaveOPImageThread.IsBackground = true;
             SaveOPImageThread.Start();
@@ -338,12 +343,16 @@ namespace PreviewDemo
 
         }
 
+        /// <summary>
+        /// 保存可见光图像
+        /// </summary>
         private void SaveOPImage()
         {
             while (true)
             {
-                if (isStartRecord)
+                if (isTrainStart)//开始过车采集
                 {
+
                     CHCNetSDK.NET_DVR_JPEGPARA lpJpegPara = new CHCNetSDK.NET_DVR_JPEGPARA();
                     lpJpegPara.wPicQuality = 2; //图像质量 Image quality
                     lpJpegPara.wPicSize = 0xff; //抓图分辨率 Picture size: 0xff-Auto(使用当前码流分辨率) 
@@ -352,12 +361,12 @@ namespace PreviewDemo
                     long dateTimeNow = TicksTimeConvert.GetNowTicks13();
                     DateTime aa = TicksTimeConvert.Ticks132LocalTime(dateTimeNow);  //时间戳转本地时间
 
-                    string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");
+                    string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");//格式化时间
 
                     //JPEG抓图保存成文件 Capture a JPEG picture
                     string sJpegPicFileName;
                     sJpegPicFileName = saveReportPath[0] + "\\" + "OP_Image";
-                    string alarmJpegPicFileName = alarmReportPath[0] + "\\" + "OP_Image";
+
                     //sJpegPicFileName = "filetest.jpg";//图片保存路径和文件名 the path and file name to save
 
                     //判断文件夹是否存在，如果不存在，新建文件夹
@@ -367,45 +376,25 @@ namespace PreviewDemo
                     }
                     sJpegPicFileName += "\\" + strTime + ".jpeg";
 
-
+                    //通过SDK进行可见光抓图
                     if (!CHCNetSDK.NET_DVR_CaptureJPEGPicture(mUserIDs[0], 1, ref lpJpegPara, sJpegPicFileName))
                     {
                         iLastErr = CHCNetSDK.NET_DVR_GetLastError();
-                        str = "NET_DVR_CaptureJPEGPicture failed, error code= " + iLastErr;
+                        str = "设备" + ipList[0] + "可见光抓图失败！错误码为：" + iLastErr;
+                        Globals.Log(str);
                         return;
                     }
-                    else
-                    {
-                        str = "NET_DVR_CaptureJPEGPicture succ and the saved file is " + sJpegPicFileName;
-                    }
-                    //Console.WriteLine(isAlarm);
-                    //if (isAlarm)
-                    //{
-                    //    //判断文件夹是否存在，如果不存在，新建文件夹
-                    //    if (!Directory.Exists(alarmJpegPicFileName))
-                    //    {
-                    //        Directory.CreateDirectory(alarmJpegPicFileName);
-                    //    }
-                    //    alarmJpegPicFileName += "\\" + strTime + ".jpeg";
-
-                    //    if (!CHCNetSDK.NET_DVR_CaptureJPEGPicture(mUserIDs[0], 1, ref lpJpegPara, alarmJpegPicFileName))
-                    //    {
-                    //        iLastErr = CHCNetSDK.NET_DVR_GetLastError();
-                    //        str = "NET_DVR_CaptureJPEGPicture failed, error code= " + iLastErr;
-                    //        Console.WriteLine("保存可见光报警图像失败，错误码为：" + iLastErr);
-                    //        return;
-                    //    }
-                    //    else
-                    //    {
-                    //        str = "NET_DVR_CaptureJPEGPicture succ and the saved file is " + alarmJpegPicFileName;
-                    //    }
-                    //    isAlarm = false;
-                    //}
                 }
                 Thread.Sleep(2);
             }
         }
 
+        /// <summary>
+        /// 指针转换为字节数组
+        /// </summary>
+        /// <param name="intPtr"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
         public static byte[] IntPtrToByteArray(IntPtr intPtr, int length)
         {
             byte[] byteArray = new byte[length];
@@ -413,130 +402,130 @@ namespace PreviewDemo
             return byteArray;
         }
 
-
+        /// <summary>
+        /// 获取红外图像和温度数据，并将其存入缓冲区
+        /// </summary>
         private void GetImage()
         {
-            //录像保存路径和文件名 the path and file name to save
-
             while (true)
             {
-                if (isStartRecord)
+                if (isTrainStart)
                 {
+
                     isSavingIrImg = true;
+
                     if (mUserIDs[0] >= 0)
                     {
                         //Console.WriteLine(DateTime.Now);
                         try
                         {
+                            //Stopwatch stopwatch = new Stopwatch();
+                            //stopwatch.Start();
 
-                            //获取当前时间戳
-                            //long dateTimeNow = TicksTimeConvert.GetNowTicks13();
-
-                            // 获取当前的时间戳
-                            long currentTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
+                            long currentTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();  // 获取当前的时间戳
                             DateTime aa = TicksTimeConvert.Ticks132LocalTime(currentTimestamp);  //时间戳转本地时间
-                            //Console.WriteLine("时" + aa.Hour);
-                            //Console.WriteLine("分 " + aa.Minute);
-                            //Console.WriteLine("秒 " + aa.Second);
-                            //Console.WriteLine("毫秒 " + aa.Millisecond);
-                            byte[] dateTimeNowBytes = new byte[8];
-                            //时间戳转为字节数组
-                            dateTimeNowBytes = TicksTimeConvert.TimestampToBytes(currentTimestamp);
 
+                            byte[] dateTimeNowBytes = new byte[8];
+                            dateTimeNowBytes = TicksTimeConvert.TimestampToBytes(currentTimestamp);//将时间戳转换为字节数组
+
+                            //设备抓图附加全屏测温数据结构体，海康mini云台不支持同时获取可见光图像
                             CHCNetSDK.NET_DVR_JPEGPICTURE_WITH_APPENDDATA struJpegWithAppendData = new CHCNetSDK.NET_DVR_JPEGPICTURE_WITH_APPENDDATA();
-                            IntPtr ptr1 = Marshal.AllocHGlobal(100 * 1024);
+                            IntPtr ptr1 = Marshal.AllocHGlobal(100 * 1024);//分配内存
                             IntPtr ptr2 = Marshal.AllocHGlobal(2 * 1024 * 1024);
                             IntPtr ptr3 = Marshal.AllocHGlobal(4 * 1024 * 1024);
-                            struJpegWithAppendData.pJpegPicBuff = ptr1;
-                            struJpegWithAppendData.pP2PDataBuff = ptr2;
-                            struJpegWithAppendData.pVisiblePicBuff = ptr3;
+                            struJpegWithAppendData.pJpegPicBuff = ptr1;//为红外热成像Jpeg图片指针分配存储空间---100BK，实际大于32KB（640*512）
+                            struJpegWithAppendData.pP2PDataBuff = ptr2;//为全屏测温数据指针分配存储空间---2MB，实际1.25MB（640*512）
+                            struJpegWithAppendData.pVisiblePicBuff = ptr3;//为可见光图片指针分配存储空间---4MB
 
-                            bool res = CHCNetSDK.NET_DVR_CaptureJPEGPicture_WithAppendData(mUserIDs[0], 2, ref struJpegWithAppendData);//获取红外图像和温度数据
+                            //获取红外图像和温度数据
+                            bool res = CHCNetSDK.NET_DVR_CaptureJPEGPicture_WithAppendData(mUserIDs[0], 2, ref struJpegWithAppendData);
 
                             if (res != true)
                             {
                                 iLastErr = CHCNetSDK.NET_DVR_GetLastError();
-                                str = "抓图失败，错误号：" + iLastErr; //登录失败，输出错误号
-                                MessageBox.Show(str);
+                                str = "设备" + ipList[0] + "热成像抓图失败，错误码为：" + iLastErr;
+                                Globals.Log(str);
                                 return;
                             }
 
+                            //将红外图像指针转字节数组
+                            byte[] IRImageArray = new byte[struJpegWithAppendData.dwJpegPicLen];
+                            IRImageArray = IntPtrToByteArray(struJpegWithAppendData.pJpegPicBuff, (int)struJpegWithAppendData.dwJpegPicLen);
 
+                            //将温度数据指针转字节数组
+                            byte[] IRTempArray = new byte[struJpegWithAppendData.dwP2PDataLen];
+                            IRTempArray = IntPtrToByteArray(struJpegWithAppendData.pP2PDataBuff, (int)struJpegWithAppendData.dwP2PDataLen);
 
-                            //WriteBytesToFile("pointerData.jpeg", struJpegWithAppendData.pJpegPicBuff, struJpegWithAppendData.dwJpegPicLen);
-                            //WriteBytesToFile("temp.dat", struJpegWithAppendData.pP2PDataBuff, struJpegWithAppendData.dwP2PDataLen);
+                            //将温度字节数组转换为实际温度数组，四个字节表示一个温度数据
+                            float[] temp = new float[IR_IMAGE_WIDTH * IR_IMAGE_HEIGHT];
+                            temp = Globals.TempBytesToTempFloats(IRTempArray, IR_IMAGE_WIDTH, IR_IMAGE_HEIGHT);
 
-                            //byte[] byteArray = new byte[] { 0x41, 0xE5, 0x49, 0x58 }; // 示例字节数组
-                            //float floatValue = BitConverter.ToSingle(byteArray, 0);
+                            //获取温度最大值
+                            List<float> list = temp.ToList();
+                            float maxTemp = list.Max();
 
-                            //CHCNetSDK.NET_DVR_JPEGPARA lpJpegPara = new CHCNetSDK.NET_DVR_JPEGPARA();
-                            //lpJpegPara.wPicQuality = 2; //图像质量 Image quality
-                            //lpJpegPara.wPicSize = 0xff; //抓图分辨率 Picture size: 0xff-Auto(使用当前码流分辨率) 
-                            //                            //抓图分辨率需要设备支持，更多取值请参考SDK文档
-
-                            ////JPEG抓图保存成文件 Capture a JPEG picture
-                            ////string sJpegPicFileName;
-                            ////sJpegPicFileName = "filetest.jpg";//图片保存路径和文件名 the path and file name to save
-
-                            ////JEPG抓图，数据保存在缓冲区中 Capture a JPEG picture and save in the buffer
-                            //uint iBuffSize = 1024 * 1024; //缓冲区大小需要不小于一张图片数据的大小 The buffer size should not be less than the picture size
-                            //byte[] byJpegPicBuffer = new byte[iBuffSize];
-                            //uint dwSizeReturned = 0;
-
-                            //if (!CHCNetSDK.NET_DVR_CaptureJPEGPicture_NEW(mUserIDs[0], 1, ref lpJpegPara, byJpegPicBuffer, iBuffSize, ref dwSizeReturned))//获取可见光图像数据，byJpegPicBuffer--图像数据字节数组，dwSizeReturned--数据长度
-                            //{
-                            //    iLastErr = CHCNetSDK.NET_DVR_GetLastError();
-                            //    str = "NET_DVR_CaptureJPEGPicture_NEW failed, error code= " + iLastErr;
-                            //    MessageBox.Show(str);
-                            //    return;
-                            //}
-                            //else
-                            //{
-                            //    ////将缓冲区里的JPEG图片数据写入文件 save the data into a file
-                            //    //string str = "buffertest.jpg";
-                            //    //FileStream fs = new FileStream(str, FileMode.Create);
-                            //    //int iLen = (int)dwSizeReturned;
-                            //    //fs.Write(byJpegPicBuffer, 0, iLen);
-                            //    //fs.Close();
-                            //    //str = "NET_DVR_CaptureJPEGPicture_NEW succ and save the data in buffer to 'buffertest.jpg'.";
-                            //    //MessageBox.Show(str);
-                            //}
-
-                            //Stopwatch stopwatch = new Stopwatch();
-                            //stopwatch.Start();
 
                             int index;
+                            //红外数据缓存数量大于等于20条，
                             if (cacheDataCount >= 20)
-                            {
+                            {   //将每条数据的最大值存到集合中
                                 List<int> maxTempList = new List<int>();
                                 for (int i = 0; i < cacheData.Length; i++)
                                 {
                                     maxTempList.Add(BitConverter.ToInt32(cacheData[i].GetRange(0, 4).ToArray(), 0));
                                 }
 
+                                //获取集合中最小温度值及其位置
                                 int min = maxTempList.Min();
                                 int minIndex = maxTempList.IndexOf(min);
-                                cacheData[minIndex].Clear();
 
-                                index = minIndex;
+                                //如果当前温度最大值>集合中最小温度值，则将其替换
+                                if(maxTemp > min)
+                                {
+                                    cacheData[minIndex].Clear();
+                                    index = minIndex;
+                                    byte[] t = new byte[4];
+                                    t = BitConverter.GetBytes((maxTemp * 10));
+
+                                    cacheData[index].AddRange(t);//添加最高温*10转换成字节数组，4个字节
+                                    cacheData[index].AddRange(dateTimeNowBytes);//添加当前时间戳8个字节
+
+                                    for (int i = 0; i < 2; i++)//2个预留字节
+                                    {
+                                        cacheData[index].Add(0x00);
+                                    }
+
+                                    cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwJpegPicLen));//添加红外图像长度，4个字节
+                                    cacheData[index].AddRange(IRImageArray);//添加红外图像数据
+                                    cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwP2PDataLen));//添加温度数据长度，四个字节
+                                    cacheData[index].AddRange(IRTempArray);//添加温度数据
+                                                                           //cacheData[index].AddRange(BitConverter.GetBytes(dwSizeReturned));//添加可见光图像长度，4个字节
+                                                                           //cacheData[index].AddRange(byJpegPicBuffer);//添加可见光图像数据
+                                }
                             }
-                            else
+                            else//缓存中数据少于20条，依次添加数据
                             {
                                 index = cacheDataCount;
+                                byte[] t = new byte[4];
+                                t = BitConverter.GetBytes((maxTemp * 10));//最高温乘以10，转换为字节数组
+
+                                cacheData[index].AddRange(t);//添加最高温*10转换成字节数组，4个字节
+                                cacheData[index].AddRange(dateTimeNowBytes);//添加当前时间戳8个字节
+
+                                for (int i = 0; i < 2; i++)//10个预留字节
+                                {
+                                    cacheData[index].Add(0x00);
+                                }
+
+                                cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwJpegPicLen));//添加红外图像长度，4个字节
+                                cacheData[index].AddRange(IRImageArray);//添加红外图像数据
+                                cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwP2PDataLen));//添加温度数据长度，4个字节
+                                cacheData[index].AddRange(IRTempArray);//添加温度数据
+                                                                       //cacheData[index].AddRange(BitConverter.GetBytes(dwSizeReturned));//添加可见光图像长度，4个字节
+                                                                       //cacheData[index].AddRange(byJpegPicBuffer);//添加可见光图像数据
                             }
 
-                            byte[] IRImageArray = new byte[struJpegWithAppendData.dwJpegPicLen];
-                            IRImageArray = IntPtrToByteArray(struJpegWithAppendData.pJpegPicBuff, (int)struJpegWithAppendData.dwJpegPicLen);//将红外图像指针转字节数组
 
-                            byte[] IRTempArray = new byte[struJpegWithAppendData.dwP2PDataLen];
-                            IRTempArray = IntPtrToByteArray(struJpegWithAppendData.pP2PDataBuff, (int)struJpegWithAppendData.dwP2PDataLen);//将温度数据指针转字节数组
-
-                            float[] temp = new float[IR_IMAGE_WIDTH * IR_IMAGE_HEIGHT];
-                            temp = Globals.TempBytesToTempFloats(IRTempArray, IR_IMAGE_WIDTH, IR_IMAGE_HEIGHT);
-
-                            List<float> list = temp.ToList();
-                            float maxTemp = list.Max();
                             //int maxTempIndex = list.IndexOf(maxTemp);//获取最高温度值所在位置
                             //int maxTempX = maxTempIndex % IR_IMAGE_WIDTH;//最高温度值x坐标
                             //int maxTempY = maxTempIndex / IR_IMAGE_WIDTH;//最高温度值y坐标
@@ -550,32 +539,7 @@ namespace PreviewDemo
                             //    isAlarm = true;
                             //}
 
-
-                            byte[] t = new byte[4];
-                            t = BitConverter.GetBytes((maxTemp * 10));
-
-                            cacheData[index].AddRange(t);//添加最高温*10转换成字节数组，4个字节
-                            cacheData[index].AddRange(dateTimeNowBytes);//添加当前时间戳8个字节
-
-                            long time = TicksTimeConvert.BytesToTimestamp(dateTimeNowBytes);//获取时间戳      
-
-                            aa = TicksTimeConvert.Ticks132LocalTime(time);  //时间戳转本地时间
-
-
-                            for (int i = 0; i < 2; i++)//10个预留字节
-                            {
-                                cacheData[index].Add(0x00);
-                            }
-
-                            cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwJpegPicLen));//添加红外图像长度，4个字节
-                            cacheData[index].AddRange(IRImageArray);//添加红外图像数据
-                            cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwP2PDataLen));//添加温度数据长度，四个字节
-                            cacheData[index].AddRange(IRTempArray);//添加温度数据
-                            //cacheData[index].AddRange(BitConverter.GetBytes(dwSizeReturned));//添加可见光图像长度，4个字节
-                            //cacheData[index].AddRange(byJpegPicBuffer);//添加可见光图像数据
-
-
-                            Marshal.FreeHGlobal(ptr1);
+                            Marshal.FreeHGlobal(ptr1);//释放内存
                             Marshal.FreeHGlobal(ptr2);
                             Marshal.FreeHGlobal(ptr3);
 
@@ -587,19 +551,26 @@ namespace PreviewDemo
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("抓图失败" + ex.ToString());
+                            str = "设备" + ipList[0] + "热成像抓图失败，异常信息为：" + ex.ToString();
+                            Globals.Log(str);
                         }
 
-                        cacheDataCount++;
+                        cacheDataCount++;//缓存数据数量加1
                     }
-                    isSavingIrImg = false;
+                    isSavingIrImg = false;//缓存红外图像数据结束
 
                 }
 
                 Thread.Sleep(1);
+
             }
         }
 
+        /// <summary>
+        /// 拷贝文件夹
+        /// </summary>
+        /// <param name="sourceDir"></param>
+        /// <param name="targetDir"></param>
         public static void CopyDirectory(string sourceDir, string targetDir)
         {
             DirectoryInfo dir = new DirectoryInfo(sourceDir);
@@ -647,25 +618,20 @@ namespace PreviewDemo
                 {
 
                     float maxTemp = BitConverter.ToSingle(cacheData[i].GetRange(0, 4).ToArray(), 0);//获取最高温
-                    Console.WriteLine("最大值" + maxTemp * 1.0f / 10);
-                    byte[] timeBytes = cacheData[i].GetRange(4, 8).ToArray();
+                    //Console.WriteLine("最大值" + maxTemp * 1.0f / 10);
+                    byte[] timeBytes = cacheData[i].GetRange(4, 8).ToArray();//获取时间戳字节数组
 
                     long time = TicksTimeConvert.BytesToTimestamp(timeBytes);//获取时间戳      
                     DateTime aa = TicksTimeConvert.Ticks132LocalTime(time);  //时间戳转本地时间
 
                     short axelNum = BitConverter.ToInt16(cacheData[i].GetRange(12, 2).ToArray(), 0);//获取轴序
 
-                    string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");
+                    string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");//格式化本地时间
 
                     int IRImageLength = BitConverter.ToInt32(cacheData[i].GetRange(4 + 8 + 2, 4).ToArray(), 0);//获取红外图像数据的长度
-
-                    string tempDataPath = saveReportPath[0] + "\\" + strTime + "_temp_" + i + ".dat";//温度数据文件名
-
                     int tempDataLength = BitConverter.ToInt32(cacheData[i].GetRange(4 + 8 + 2 + 4 + IRImageLength, 4).ToArray(), 0);//获取温度数据的长度
 
-
                     byte[] IRTempArray = cacheData[i].GetRange(4 + 8 + 2 + 4 + IRImageLength + 4, tempDataLength).ToArray();//获取红外图像温度字节数组
-
                     float[] temp = Globals.TempBytesToTempFloats(IRTempArray, IR_IMAGE_WIDTH, IR_IMAGE_HEIGHT);//将温度字节数组转换为实际温度数组
                     List<float> tempList = temp.ToList();//将温度数组转为集合
                     maxTemp = tempList.Max();//获取最高温度值
@@ -675,19 +641,19 @@ namespace PreviewDemo
                     int maxTempY = maxTempIndex / IR_IMAGE_WIDTH;//最高温度值y坐标
 
                     RectangleF rectF = GetRectArea(maxTempX, maxTempY, 5, 5);//选择最高温度点周围10*10的区域
-
                     float[] result = getTempAtRect(temp, rectF, IR_IMAGE_WIDTH);//获取该区域的最值、平均值 result[2] 为平均值
 
-
                     string irImagePath = saveReportPath[0] + "\\" + strTime + "_IR_" + i + ".jpeg";//红外图像文件名
-
+                    string tempDataPath = saveReportPath[0] + "\\" + strTime + "_temp_" + i + ".dat";//温度数据文件名
 
                     WriteBytesToFile(irImagePath, cacheData[i].GetRange(4 + 8 + 2 + 4, IRImageLength).ToArray(), IRImageLength);//保存红外图像
                     WriteBytesToFile(tempDataPath, IRTempArray, tempDataLength);//保存温度数据
-                    Console.WriteLine("平均值" + result[2]);
+                    //Console.WriteLine("平均值" + result[2]);
+
+                    //最大值温度点周围10*10区域温度平均值大于报警阈值，存储报警图片
                     if (result[2] > Globals.systemParam.alarm_0)
                     {
-                        isAlarm = true;
+                        isAlarm[0] = true;
                         if (!Directory.Exists(alarmReportPath[0]))
                         {
                             Directory.CreateDirectory(alarmReportPath[0]);
@@ -695,22 +661,20 @@ namespace PreviewDemo
                         string alarmDataPath = alarmReportPath[0] + "\\" + strTime + "_temp_" + i + ".dat";//温度数据文件名
                         string alarmIrImagePath = alarmReportPath[0] + "\\" + strTime + "_IR_" + i + ".jpeg";//红外图像文件名
 
-
                         WriteBytesToFile(alarmIrImagePath, cacheData[i].GetRange(4 + 8 + 2 + 4, IRImageLength).ToArray(), IRImageLength);//保存红外图像
                         WriteBytesToFile(alarmDataPath, IRTempArray, tempDataLength);//保存温度数据
-                        if (isCopyOpImage == false)
+                        if (isCopyOpImage[0] == false)//拷贝可见光图片文件夹
                         {
                             CopyDirectory(saveReportPath[0] + "\\" + "OP_Image", alarmReportPath[0] + "\\" + "OP_Image");
-                            isCopyOpImage = true;
+                            isCopyOpImage[0] = true;
                         }
 
                     }
 
-
                 }
             }
-
-            string[] splitPath = saveReportPath[0].Split('\\');
+            //C:\HIK\SaveReport\三间房站\设备0\2024_07_25\20240725_151937_225
+            string[] splitPath = saveReportPath[0].Split('\\');//分割路径字符串
             string saveXmlPath = null;
 
 
@@ -721,37 +685,43 @@ namespace PreviewDemo
 
             }
 
+            //索引文件路径,当日日期（年_月_日）为文件名
             saveXmlPath += splitPath[5] + ".xml";
 
             //IndexListInfo indexList = new IndexListInfo();
             //Globals.ReadInfoXml<IndexListInfo>(ref indexList, saveXmlPath);
 
             TrainIndex trainIndex = new TrainIndex();
-            if (isAlarm)
+            if (isAlarm[0])
             {
-                trainIndex.alarmTemperatrue = "是";
+                trainIndex.isAlarm = "是";              
             }
             else
             {
-                trainIndex.alarmTemperatrue = "否";
+                trainIndex.isAlarm = "否";
             }
 
             trainIndex.detectTime = splitPath[6].Substring(9, 2) + ":" + splitPath[6].Substring(11, 2);
             trainIndex.IndexID = (uint)trainIndexCount + 1;
             //indexList.trainIndexList.Add(trainIndex);
             indexList.trainIndexList.Add(trainIndex);
-            Globals.WriteInfoXml<IndexListInfo>(indexList, saveXmlPath);
+            Globals.WriteInfoXml<IndexListInfo>(indexList, saveXmlPath);//将过车数据写入索引文件
 
 
             ListViewItem item = new ListViewItem();
             //item.SubItems.Add("");
             item.SubItems.Add(trainIndex.IndexID.ToString());
             item.SubItems.Add(trainIndex.detectTime.ToString());
-            item.SubItems.Add(trainIndex.alarmTemperatrue.ToString());
+            item.SubItems.Add(trainIndex.isAlarm.ToString());
+            if ("是".Equals(trainIndex.isAlarm.ToString()))
+            {
+                item.ForeColor = Color.Red;
+            }
+          
             trainListView.Items.Add(item);
 
 
-            isAlarm = false;
+            isAlarm[0] = false;
             trainIndexCount++;
             //string videoPath = "your_video.mp4";
             //// 需要获取的帧索引列表
@@ -1201,7 +1171,12 @@ namespace PreviewDemo
             }
         }
 
-
+        /// <summary>
+        /// 保存字节数组到文件
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="bytes"></param>
+        /// <param name="length"></param>
         private void WriteBytesToFile(string filePath, byte[] bytes, int length)
         {
             using (FileStream fileStream = new FileStream(filePath, FileMode.OpenOrCreate))
@@ -1300,6 +1275,7 @@ namespace PreviewDemo
             SetButtonImg(stopRecordBtn, "停止录制1.png");
         }
 
+
         /// <summary>
         /// 停止录制视频按钮点击事件
         /// </summary>
@@ -1307,7 +1283,8 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StopRecordBtn_Click(object sender, EventArgs e)
         {
-            isStartRecord = false;
+            isTrainStart = false;
+            SetButtonImg(startRecordBtn, "开始录制-line.png");
             Thread.Sleep(100);
             ////停止录像 Stop recording
             //if (!CHCNetSDK.NET_DVR_StopSaveRealData(mRealHandles[0]))
@@ -1326,6 +1303,7 @@ namespace PreviewDemo
 
             while (true)
             {
+                //等待过车数据缓存完成后开始进行数据分析及存盘
                 if (!isSavingIrImg)
                 {
 
@@ -1337,7 +1315,7 @@ namespace PreviewDemo
                     }
 
                     cacheDataCount = 0;
-                    isCopyOpImage = false;
+                    isCopyOpImage[0] = false;
                     break;
                 }
                 Thread.Sleep(5);
@@ -1352,7 +1330,7 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StartRecordBtn_MouseLeave(object sender, EventArgs e)
         {
-            if (!saveVideoFlag)
+            if (!isTrainStart)
             {
                 SetButtonImg(startRecordBtn, "开始录制-line.png");
             }
@@ -1436,27 +1414,20 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StartRecordBtn_Click(object sender, EventArgs e)
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
+            //Stopwatch stopwatch = new Stopwatch();
+            //stopwatch.Start();
 
             //获取当前时间戳
             long dateTimeNow = TicksTimeConvert.GetNowTicks13();
-
             DateTime aa = TicksTimeConvert.Ticks132LocalTime(dateTimeNow);  //时间戳转本地时间
 
-            //savePath = Application.StartupPath + "\\" + ipList[0];
 
-            //saveReportPath[0] = Application.StartupPath + "\\" + "SaveReport" +"\\" +  aa.ToString("yyyy_MM_dd") + "\\" +  ipList[0];
-
-            //saveReportPath[0] = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + aa.ToString("yyyy_MM_dd") + "\\" + ipList[0];
             saveReportPath[0] = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + aa.ToString("yyyy_MM_dd");
             alarmReportPath[0] = Globals.RootSavePath + "\\" + "AlarmReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + aa.ToString("yyyy_MM_dd");
             string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");
             saveReportPath[0] += "\\" + strTime;
 
             alarmReportPath[0] += "\\" + strTime;
-            //savePath = savePath + "\\" + strTime;
 
             //判断文件夹是否存在，如果不存在，新建文件夹
             if (!Directory.Exists(saveReportPath[0]))
@@ -1464,37 +1435,9 @@ namespace PreviewDemo
                 Directory.CreateDirectory(saveReportPath[0]);
             }
 
+            isTrainStart = true;
+            SetButtonImg(startRecordBtn, "开始录制-line(1).png");
 
-
-            //string recordPath = saveReportPath[0] + "\\" + strTime + ".mp4";
-
-            //if (mUserIDs[0] >= 0)
-            //{
-            //    if (m_bRecord == false)
-            //    {
-            //        //强制I帧 Make one key frame                      
-            //        CHCNetSDK.NET_DVR_MakeKeyFrame(mUserIDs[0], 1);
-
-            //        //开始录像 Start recording
-            //        if (!CHCNetSDK.NET_DVR_SaveRealData(mRealHandles[0], recordPath))
-            //        {
-            //            iLastErr = CHCNetSDK.NET_DVR_GetLastError();
-            //            str = "NET_DVR_SaveRealData failed, error code= " + iLastErr;
-            //            MessageBox.Show(str);
-            //            return;
-            //        }
-            //        else
-            //        {
-            //            m_bRecord = true;
-            //        }
-            //    }
-
-            //    SetButtonImg(startRecordBtn, "开始录制-line(1).png");
-            //    stopwatch.Stop();
-            //    long a = stopwatch.ElapsedMilliseconds;
-            isStartRecord = true;
-
-            //}
         }
 
         /// <summary>
@@ -1603,7 +1546,7 @@ namespace PreviewDemo
         /// <param name="imageName"></param>
         private void SetButtonImg(UISymbolButton btn, string imageName)
         {
-
+            btn.Image = Image.FromFile(Globals.startPathInfo.FullName + "\\Resources\\" + imageName);
         }
 
         /// <summary>
@@ -1727,11 +1670,11 @@ namespace PreviewDemo
                 columnHeader1.Width = trainListView.Width * 2 / 5;
                 columnHeader1.TextAlign = HorizontalAlignment.Center;
                 trainListView.Columns.Add(columnHeader1);
-                
+
 
                 ColumnHeader columnHeader2 = new ColumnHeader();
                 columnHeader2.Text = "是否报警";
-                columnHeader2.Width = trainListView.Width * 2/ 5;
+                columnHeader2.Width = trainListView.Width * 2 / 5;
                 columnHeader2.TextAlign = HorizontalAlignment.Center;
                 trainListView.Columns.Add(columnHeader2);
                 trainListView.FullRowSelect = true;
@@ -1744,7 +1687,7 @@ namespace PreviewDemo
 
 
             UISplitContainer uISplitContainer = (UISplitContainer)fmonitor.GetControl("uiSplitContainer1");
-            uISplitContainer.SplitterDistance = uISplitContainer.Height/40;
+            uISplitContainer.SplitterDistance = uISplitContainer.Height / 40;
 
             string[] subdirectoryEntries;
             string trainIndexDirectoryPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0;
@@ -1754,8 +1697,6 @@ namespace PreviewDemo
                 subdirectoryEntries = Directory.GetFiles(trainIndexDirectoryPath, "*.xml", SearchOption.TopDirectoryOnly);
                 if (subdirectoryEntries.Length > 0)
                 {
-
-
                     foreach (string path in subdirectoryEntries)
                     {
                         string[] time = Path.GetFileNameWithoutExtension(path).Split('_');
@@ -1765,7 +1706,7 @@ namespace PreviewDemo
 
                         if (year == DateTime.Now.Year && month == DateTime.Now.Month && day == DateTime.Now.Day)
                         {
-                            indexList = new IndexListInfo();
+
                             Globals.ReadInfoXml<IndexListInfo>(ref indexList, path);
 
                             trainListView.Items.Clear();
@@ -1784,8 +1725,8 @@ namespace PreviewDemo
                                 //trainListView.Columns[3].TextAlign = HorizontalAlignment.Center;
 
                                 item.SubItems.Add(indexList.trainIndexList[i].detectTime.ToString());
-                                item.SubItems.Add(indexList.trainIndexList[i].alarmTemperatrue.ToString());
-                                if (indexList.trainIndexList[i].alarmTemperatrue.ToString().Equals("是"))
+                                item.SubItems.Add(indexList.trainIndexList[i].isAlarm.ToString());
+                                if (indexList.trainIndexList[i].isAlarm.ToString().Equals("是"))
                                 {
                                     item.ForeColor = Color.Red;
                                 }
@@ -1951,12 +1892,17 @@ namespace PreviewDemo
                 saveReportPath.Add(null);
                 alarmReportPath.Add(null);
 
+                isAlarm.Add(false);
+                isCopyOpImage.Add(false);
+
             }
 
             for (int i = 0; i < cacheData.Length; i++)
             {
                 cacheData[i] = new List<byte>();
             }
+
+            indexList = new IndexListInfo();
         }
 
 
@@ -1964,14 +1910,14 @@ namespace PreviewDemo
         /// 注册设备
         /// </summary>
         /// <param name="deviceNum">设备号 从0开始</param>
-        /// <param name="ipAddress"></param>
-        /// <param name="userName"></param>
-        /// <param name="psw"></param>
-        /// <param name="port"></param>
-        /// <param name="loginCallBack"></param>
+        /// <param name="ipAddress">设备ip</param>
+        /// <param name="userName">用户名</param>
+        /// <param name="psw">密码</param>
+        /// <param name="port">端口号</param>
+        /// <param name="loginCallBack">登录回调函数</param>
         private void LoginDevice(int deviceNum, string ipAddress, string userName, string psw, string port, CHCNetSDK.LOGINRESULTCALLBACK loginCallBack)
         {
-            if (mUserIDs[deviceNum] < 0)
+            if (mUserIDs[deviceNum] < 0)//如果设备ID小于0，登录设备
             {
                 struLogInfo = new CHCNetSDK.NET_DVR_USER_LOGIN_INFO();
 
@@ -2043,7 +1989,7 @@ namespace PreviewDemo
                 lpPreviewInfo.dwStreamType = 0;//码流类型：0-主码流，1-子码流，2-码流3，3-码流4，以此类推
                 lpPreviewInfo.dwLinkMode = 0;//连接方式：0- TCP方式，1- UDP方式，2- 多播方式，3- RTP方式，4-RTP/RTSP，5-RSTP/HTTP 
                 lpPreviewInfo.bBlocked = true; //0- 非阻塞取流，1- 阻塞取流
-                lpPreviewInfo.dwDisplayBufNum = 6; //播放库播放缓冲区最大缓冲帧数
+                lpPreviewInfo.dwDisplayBufNum = 6; //播放库播放缓冲区最大缓冲帧数 取值范围：1、6（默认，自适应播放模式）、15，置0时默认为1
                 lpPreviewInfo.byProtoType = 0;//应用层取流协议，0-私有协议，1-RTSP协议
                 lpPreviewInfo.byPreviewMode = 0;//预览模式，0-正常预览，1-延迟预览
 
@@ -2069,7 +2015,7 @@ namespace PreviewDemo
                 {
                     iLastErr = CHCNetSDK.NET_DVR_GetLastError();
                     str = "预览" + ipList[deviceNum] + "通道：" + channelNum + "失败！" + "错误号：" + iLastErr; //预览失败，输出错误号
-                    MessageBox.Show(str);
+                    Globals.Log(str);
                     return;
                 }
                 else
@@ -2337,6 +2283,15 @@ namespace PreviewDemo
             }
         }
 
+        /// <summary>
+        /// 获取矩形区域最大值及坐标位置
+        /// </summary>
+        /// <param name="realTemp"></param>
+        /// <param name="X1"></param>
+        /// <param name="Y1"></param>
+        /// <param name="X2"></param>
+        /// <param name="Y2"></param>
+        /// <returns></returns>
         public int[] getTempAtRect(int[,] realTemp, int X1, int Y1, int X2, int Y2)
         {
             int[] result = new int[3];
@@ -2366,7 +2321,15 @@ namespace PreviewDemo
             return result;
         }
 
-
+        /// <summary>
+        /// 获取椭圆区域温度最大值及坐标
+        /// </summary>
+        /// <param name="imageData"></param>
+        /// <param name="ellipseCenterX"></param>
+        /// <param name="ellipseCenterY"></param>
+        /// <param name="ellipseRadiusX"></param>
+        /// <param name="ellipseRadiusY"></param>
+        /// <returns></returns>
         public int[] FindMaxValueInEllipse(int[,] imageData, int ellipseCenterX, int ellipseCenterY, int ellipseRadiusX, int ellipseRadiusY)
         {
             int[] result = new int[3];

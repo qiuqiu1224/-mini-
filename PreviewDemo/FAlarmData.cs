@@ -292,34 +292,6 @@ namespace PreviewDemo
 
                     count++;
 
-
-                    //DateTime checkingDate = new DateTime(year, month, day, hour, min, sec);
-
-                    //DateTime startDate = new DateTime(uiDatePickerStart.Year, uiDatePickerStart.Month, uiDatePickerStart.Day, 0, 0, 0);
-                    //DateTime endDate = new DateTime(uiDatePickerStart.Year, uiDatePickerStart.Month, uiDatePickerStart.Day, 23, 59, 59);
-
-                    //if (checkingDate >= startDate && checkingDate <= endDate)
-                    //{
-                    //    directoryFileNames[0].Add(subdirectoryEntries_0[i]);
-                    //    if (deviceCount > 1)
-                    //    {
-                    //        directoryFileNames[1].Add(subdirectoryEntries_1[i]);
-                    //    }
-                    //    ListViewItem item = new ListViewItem();
-
-                    //    item.SubItems[0].Text = (count + 1).ToString();
-                    //    listView_VehicleData.Columns[1].TextAlign = HorizontalAlignment.Left;
-                    //    listView_VehicleData.Columns[0].TextAlign = HorizontalAlignment.Right;
-
-                    //    fileName = fileName.Substring(0, 4) + "-" + fileName.Substring(4, 2) + "-" + fileName.Substring(6, 2) + " " + fileName.Substring(9, 2) + ":" + fileName.Substring(11, 2);
-                    //    item.SubItems.Add(fileName);
-                    //    listView_VehicleData.Items.Add(item);
-
-                    //    count++;
-                    //}
-
-                    Console.WriteLine("");
-
                 }
 
 
@@ -357,8 +329,7 @@ namespace PreviewDemo
                         + "temp" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(22) + ".dat";
 
                     float[] tempDatas = Globals.GetTempFileToArray(tempFilePath);
-                    List<float> tempDataList = new List<float>();
-                    tempDataList = tempDatas.ToList();
+                    List<float> tempDataList = tempDatas.ToList();
                     float maxTemp = tempDataList.Max();
                     int index = tempDataList.IndexOf(maxTemp);
                     int maxTempY = index / TEMP_WIDTH;
@@ -382,93 +353,6 @@ namespace PreviewDemo
                     label1.Visible = true;
                     ir_Image_preview_btn.Visible = true;
                     ir_image_next_btn.Visible = true;
-                    // 点击事件处理代码
-                    // 比如显示点击的项的文本
-                    //MessageBox.Show("你点击了: " + item.Index);
-
-
-                    //var capture = new VideoCapture(Path.GetFullPath(directoryFileNames[0][item.Index]) + "\\" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4");
-
-                    //// 检查视频是否成功打开
-                    //if (capture.IsOpened())
-                    //{
-
-                    //    // 获取视频的帧数
-                    //    Console.WriteLine(" 帧数" + capture.FrameCount);
-                    //    Console.WriteLine(" 帧频" + capture.Fps);
-                    //    Console.WriteLine("时长" + capture.FrameCount / capture.Fps);
-
-                    //}
-                    //else
-                    //{
-                    //    Console.WriteLine("Unable to open the video file.");
-                    //    return;
-                    //}
-
-                    //FileInfo vedioFileInfo = new FileInfo(Application.StartupPath + "\\" + "20240715_094710_390.mp4");
-                    //string vedioFileName = vedioFileInfo.Name;
-                    //string vedioFileNameWithoutExtension = Path.GetFileNameWithoutExtension(Path.GetFullPath(directoryFileNames[0][item.Index]) + "\\" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4");
-                    //string vedioHour = vedioFileNameWithoutExtension.Substring(9, 2);
-                    //string vedioMin = vedioFileNameWithoutExtension.Substring(11, 2);
-                    //string vedioSec = vedioFileNameWithoutExtension.Substring(13, 2);
-                    //string vedioMillsec = vedioFileNameWithoutExtension.Substring(16, 3);
-
-                    //string IRImageFileNameWithoutExtension = Path.GetFileNameWithoutExtension(irJpegFiles[0]);
-                    //string IRImageHour = IRImageFileNameWithoutExtension.Substring(9, 2);
-                    //string IRImageMin = IRImageFileNameWithoutExtension.Substring(11, 2);
-                    //string IRImageSec = IRImageFileNameWithoutExtension.Substring(13, 2);
-                    //string IRImageMillsec = IRImageFileNameWithoutExtension.Substring(16, 3);
-
-
-                    //int timeDiff = Convert.ToUInt16(IRImageHour) * 60 * 60 * 1000 + Convert.ToUInt16(IRImageMin) * 60 * 1000 + Convert.ToUInt16(IRImageSec) * 1000 + Convert.ToUInt16(IRImageMillsec)
-                    //    - Convert.ToUInt16(vedioHour) * 60 * 60 * 1000 - Convert.ToUInt16(vedioMin) * 60 * 1000 - Convert.ToUInt16(vedioSec) * 1000 - Convert.ToUInt16(vedioMillsec);
-
-                    //int frameIndex = (int)(timeDiff * capture.Fps / 1000);
-
-                    //int startFrameIndex = 0;
-                    //int endFrameIndex = 0;
-
-                    //if (frameIndex - 5 > 0)
-                    //{
-                    //    startFrameIndex = frameIndex - 5;
-                    //}
-                    //else
-                    //{
-                    //    startFrameIndex = frameIndex;
-                    //}
-
-
-                    //if (frameIndex + 4 < capture.FrameCount)
-                    //{
-                    //    endFrameIndex = frameIndex + 4;
-                    //}
-                    //else
-                    //{
-                    //    endFrameIndex = frameIndex;
-                    //}
-
-                    //for (int i = startFrameIndex; i <= endFrameIndex; i++)
-                    //{
-                    //    capture.Set(CaptureProperty.PosFrames, i);
-                    //    using (Mat frame = new Mat())
-                    //    {
-                    //        capture.Read(frame);
-                    //        if (!frame.Empty())
-                    //        {
-
-                    //            OP_Frames[0].Add(frame.Clone());
-                    //            // 这里可以对帧frame进行处理
-                    //            // 例如保存帧到文件
-                    //            string outputPath = $"frame_{i}.png";
-                    //            Cv2.ImWrite(outputPath, frame);
-
-                    //        }
-                    //    }
-                    //}
-
-
-
-
 
                     string irImageFilePath = Path.GetFileNameWithoutExtension(irJpegFiles[currentIrImageIndex]);
 
@@ -485,61 +369,6 @@ namespace PreviewDemo
                     op_image_next_btn.Visible = true;
 
 
-                    //videoFilePath = Path.GetFullPath(directoryFileNames[0][item.Index]) + "\\" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4";
-                    //videoCapture = new VideoCapture(videoFilePath);
-
-                    //string vedioFileNameWithoutExtension = Path.GetFileNameWithoutExtension(Path.GetFullPath(videoFilePath));
-                    //string vedioHour = vedioFileNameWithoutExtension.Substring(9, 2);
-                    //string vedioMin = vedioFileNameWithoutExtension.Substring(11, 2);
-                    //string vedioSec = vedioFileNameWithoutExtension.Substring(13, 2);
-                    //string vedioMillsec = vedioFileNameWithoutExtension.Substring(16, 3);
-
-                    //videoInfo.hour = Convert.ToUInt16(vedioHour);
-                    //videoInfo.min = Convert.ToUInt16(vedioMin);
-                    //videoInfo.sec = Convert.ToUInt16(vedioSec);
-                    //videoInfo.millsec = Convert.ToUInt16(vedioMillsec);
-
-                    //GetVideoFrames(irImageFilePath, OP_Frames[0]);
-                    //if (OP_Frames[0].Count > 0)
-                    //{
-
-
-                    //    if (OP_Frames[0].Count >= 10)
-                    //    {
-                    //        currentOpImageIndex = 9;
-                    //    }
-                    //    else
-                    //    {
-                    //        if (OP_Frames[0].Count >= 4)
-                    //        {
-                    //            currentOpImageIndex = OP_Frames[0].Count - 1;
-                    //        }
-                    //        else
-                    //        {
-                    //            currentOpImageIndex = 0;
-                    //        }
-
-                    //    }
-
-                    //    label2.Text = "可见光图像 共" + OP_Frames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
-                    //    label2.Visible = true;
-                    //    op_image_preview_btn.Visible = true;
-                    //    op_image_next_btn.Visible = true;
-
-                    //    if (currentOpImageIndex <= OP_Frames[0].Count - 1)
-                    //    {
-
-                    //        pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(OP_Frames[0][currentOpImageIndex]);
-                    //    }
-                    //    else
-                    //    {
-                    //        Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频录制不全");
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频大小0KB");
-                    //}
                 }
 
             }
@@ -623,46 +452,6 @@ namespace PreviewDemo
                 img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
                 pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
                 label2.Text = "可见光图像 共" + OpImageFileNames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
-
-
-                //GetVideoFrames(irImageListPath[0][currentIrImageIndex], OP_Frames[0]);
-                //if (OP_Frames[0].Count > 0)
-                //{
-
-
-                //    if (OP_Frames[0].Count >= 10)
-                //    {
-                //        currentOpImageIndex = 9;
-                //    }
-                //    else
-                //    {
-                //        if (OP_Frames[0].Count >= 4)
-                //        {
-                //            currentOpImageIndex = OP_Frames[0].Count - 1;
-                //        }
-                //        else
-                //        {
-                //            currentOpImageIndex = 0;
-                //        }
-
-                //    }
-
-
-                //    if (currentOpImageIndex <= OP_Frames[0].Count - 1)
-                //    {
-
-                //        pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(OP_Frames[0][currentOpImageIndex]);
-                //        label2.Text = "可见光图像 共" + OP_Frames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
-                //    }
-                //    else
-                //    {
-                //        Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频录制不全");
-                //    }
-                //}
-                //else
-                //{
-                //    Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频大小0KB");
-                //}
             }
         }
 
@@ -720,47 +509,7 @@ namespace PreviewDemo
                 img = Cv2.ImRead(OpImageFileNames[0][currentOpImageIndex]);
                 pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
                 label2.Text = "可见光图像 共" + OpImageFileNames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
-
-                //GetVideoFrames(irImageListPath[0][currentIrImageIndex], OP_Frames[0]);
-                //if (OP_Frames[0].Count > 0)
-                //{
-
-
-                //    if (OP_Frames[0].Count >= 10)
-                //    {
-                //        currentOpImageIndex = 9;
-                //    }
-                //    else
-                //    {
-                //        if (OP_Frames[0].Count >= 4)
-                //        {
-                //            currentOpImageIndex = OP_Frames[0].Count - 1;
-                //        }
-                //        else
-                //        {
-                //            currentOpImageIndex = 0;
-                //        }
-
-                //    }
-
-
-                //    if (currentOpImageIndex <= OP_Frames[0].Count - 1)
-                //    {
-
-                //        pics[1].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(OP_Frames[0][currentOpImageIndex]);
-                //        label2.Text = "可见光图像 共" + OP_Frames[0].Count + "张 第" + (currentOpImageIndex + 1) + "张";
-                //    }
-                //    else
-                //    {
-                //        Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频录制不全");
-                //    }
-                //}
-
-                //else
-                //{
-                //    Globals.Log("解析可见光视频" + Path.GetFileNameWithoutExtension(directoryFileNames[0][item.Index]) + ".mp4" + "失败，视频大小0KB");
-                //}
-
+       
 
             }
         }

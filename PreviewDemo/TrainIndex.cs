@@ -23,7 +23,7 @@ namespace PreviewDemo
         /// 是否报警
         /// </summary>
         [XmlElement(ElementName = "是否报警")]
-        public string alarmTemperatrue = "";
+        public string isAlarm = "";
     }
 
     public class IndexListInfo

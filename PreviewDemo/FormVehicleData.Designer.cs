@@ -34,7 +34,7 @@
             this.uiComboBox_DeviceName = new Sunny.UI.UIComboBox();
             this.uiLabel3 = new Sunny.UI.UILabel();
             this.uiDatePickerEnd = new Sunny.UI.UIDatePicker();
-            this.uiButton1 = new Sunny.UI.UIButton();
+            this.uiButton_query = new Sunny.UI.UIButton();
             this.uiDatePickerStart = new Sunny.UI.UIDatePicker();
             this.uiLabel2 = new Sunny.UI.UILabel();
             this.uiLabel1 = new Sunny.UI.UILabel();
@@ -64,7 +64,7 @@
             this.uiPanel1.Controls.Add(this.uiComboBox_DeviceName);
             this.uiPanel1.Controls.Add(this.uiLabel3);
             this.uiPanel1.Controls.Add(this.uiDatePickerEnd);
-            this.uiPanel1.Controls.Add(this.uiButton1);
+            this.uiPanel1.Controls.Add(this.uiButton_query);
             this.uiPanel1.Controls.Add(this.uiDatePickerStart);
             this.uiPanel1.Controls.Add(this.uiLabel2);
             this.uiPanel1.Controls.Add(this.uiLabel1);
@@ -152,22 +152,22 @@
             this.uiDatePickerEnd.Visible = false;
             this.uiDatePickerEnd.Watermark = "";
             // 
-            // uiButton1
+            // uiButton_query
             // 
-            this.uiButton1.BackColor = System.Drawing.Color.Transparent;
-            this.uiButton1.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.uiButton1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.uiButton1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiButton1.ForeColor = System.Drawing.Color.Black;
-            this.uiButton1.Location = new System.Drawing.Point(565, 3);
-            this.uiButton1.MinimumSize = new System.Drawing.Size(1, 1);
-            this.uiButton1.Name = "uiButton1";
-            this.uiButton1.RectSize = 2;
-            this.uiButton1.Size = new System.Drawing.Size(100, 35);
-            this.uiButton1.TabIndex = 5;
-            this.uiButton1.Text = "查询";
-            this.uiButton1.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiButton1.Click += new System.EventHandler(this.UiButton1_Click);
+            this.uiButton_query.BackColor = System.Drawing.Color.Transparent;
+            this.uiButton_query.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.uiButton_query.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.uiButton_query.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiButton_query.ForeColor = System.Drawing.Color.Black;
+            this.uiButton_query.Location = new System.Drawing.Point(565, 3);
+            this.uiButton_query.MinimumSize = new System.Drawing.Size(1, 1);
+            this.uiButton_query.Name = "uiButton_query";
+            this.uiButton_query.RectSize = 2;
+            this.uiButton_query.Size = new System.Drawing.Size(100, 35);
+            this.uiButton_query.TabIndex = 5;
+            this.uiButton_query.Text = "查询";
+            this.uiButton_query.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiButton_query.Click += new System.EventHandler(this.uiButton_query_Click);
             // 
             // uiDatePickerStart
             // 
@@ -406,7 +406,7 @@
         private Sunny.UI.UIPanel uiPanel3;
         private Sunny.UI.UILabel uiLabel2;
         private Sunny.UI.UILabel uiLabel1;
-        private Sunny.UI.UIButton uiButton1;
+        private Sunny.UI.UIButton uiButton_query;
         private System.Windows.Forms.ListView listView_VehicleData;
         private Sunny.UI.UIDatePicker uiDatePickerStart;
         private Sunny.UI.UIDatePicker uiDatePickerEnd;

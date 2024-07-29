@@ -24,7 +24,7 @@ namespace PreviewDemo
 
         List<string>[] directoryFileNames = new List<string>[2];
         List<string>[] OpImageFileNames = new List<string>[2];
-        List<Mat>[] OP_Frames = new List<Mat>[2];
+        //List<Mat>[] OP_Frames = new List<Mat>[2];
         List<string>[] irImageListPath = new List<string>[2];
         private List<float[,]> realTemps = new List<float[,]>();//存储温度数据
 
@@ -65,101 +65,8 @@ namespace PreviewDemo
             for (int i = 0; i < deviceCount; i++)
             {
                 directoryFileNames[i] = new List<string>();
-                OpImageFileNames[i] = new List<string>();
-                OP_Frames[i] = new List<Mat>();
+                OpImageFileNames[i] = new List<string>();          
                 irImageListPath[i] = new List<string>();
-            }
-        }
-
-        private void UiButton1_Click(object sender, EventArgs e)
-        {
-            directoryFileNames[0].Clear();
-            pics[0].Image = null;
-            pics[1].Image = null;
-
-            listView_VehicleData.Items.Clear();
-            //if (listView_VehicleData.Items.Count >= 1)
-            //{
-            //    for (int j = listView_VehicleData.Items.Count - 1; j >= 0; j--)
-            //    {
-            //        listView_VehicleData.Items.RemoveAt(j);
-            //    }
-            //}
-
-            //string folderPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd") + "\\" + Globals.systemParam.ip_0; // 
-            string folderPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd"); // 
-            string opImageFolderPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd") + "\\" + "OP_Image";
-           
-
-            DirectoryInfo imageDirectoryInfo = new DirectoryInfo(folderPath);
-            if (imageDirectoryInfo.Exists)
-            {
-                uiLabel3.Text = "";
-                subdirectoryEntries_0 = Directory.GetDirectories(folderPath);
-
-                int count = 0;
-                for (int i = 0; i < subdirectoryEntries_0.Length; i++)
-                {
-                    string fileName = Path.GetFileName(subdirectoryEntries_0[i]);
-                    //int year = Convert.ToInt32(fileName.Substring(0, 4));//年
-                    //int month = Convert.ToInt32(fileName.Substring(4, 2));//月
-                    //int day = Convert.ToInt32(fileName.Substring(6, 2));//日
-                    //int hour = Convert.ToInt32(fileName.Substring(9, 2));//时
-                    //int min = Convert.ToInt32(fileName.Substring(11, 2));//分
-                    //int sec = Convert.ToInt32(fileName.Substring(13, 2));//秒
-
-                    directoryFileNames[0].Add(subdirectoryEntries_0[i]);
-                    //if (deviceCount > 1)
-                    //{
-                    //    directoryFileNames[1].Add(subdirectoryEntries_1[i]);
-                    //}
-                    ListViewItem item = new ListViewItem();
-
-                    item.SubItems[0].Text = (count + 1).ToString();
-                    listView_VehicleData.Columns[1].TextAlign = HorizontalAlignment.Left;
-                    listView_VehicleData.Columns[0].TextAlign = HorizontalAlignment.Right;
-
-                    fileName = fileName.Substring(0, 4) + "-" + fileName.Substring(4, 2) + "-" + fileName.Substring(6, 2) + " " + fileName.Substring(9, 2) + ":" + fileName.Substring(11, 2);
-                    item.SubItems.Add(fileName);
-                    listView_VehicleData.Items.Add(item);
-
-                    count++;
-
-
-                    //DateTime checkingDate = new DateTime(year, month, day, hour, min, sec);
-
-                    //DateTime startDate = new DateTime(uiDatePickerStart.Year, uiDatePickerStart.Month, uiDatePickerStart.Day, 0, 0, 0);
-                    //DateTime endDate = new DateTime(uiDatePickerStart.Year, uiDatePickerStart.Month, uiDatePickerStart.Day, 23, 59, 59);
-
-                    //if (checkingDate >= startDate && checkingDate <= endDate)
-                    //{
-                    //    directoryFileNames[0].Add(subdirectoryEntries_0[i]);
-                    //    if (deviceCount > 1)
-                    //    {
-                    //        directoryFileNames[1].Add(subdirectoryEntries_1[i]);
-                    //    }
-                    //    ListViewItem item = new ListViewItem();
-
-                    //    item.SubItems[0].Text = (count + 1).ToString();
-                    //    listView_VehicleData.Columns[1].TextAlign = HorizontalAlignment.Left;
-                    //    listView_VehicleData.Columns[0].TextAlign = HorizontalAlignment.Right;
-
-                    //    fileName = fileName.Substring(0, 4) + "-" + fileName.Substring(4, 2) + "-" + fileName.Substring(6, 2) + " " + fileName.Substring(9, 2) + ":" + fileName.Substring(11, 2);
-                    //    item.SubItems.Add(fileName);
-                    //    listView_VehicleData.Items.Add(item);
-
-                    //    count++;
-                    //}
-
-                    Console.WriteLine("");
-
-                }
-
-
-            }
-            else
-            {
-                uiLabel3.Text = "没有过车数据";
             }
         }
 
@@ -183,8 +90,6 @@ namespace PreviewDemo
                 columnHeader1.TextAlign = HorizontalAlignment.Center;
                 listView_VehicleData.Columns.Add(columnHeader1);
                 listView_VehicleData.FullRowSelect = true;
-
-
             }
 
             SetFmonitorDisplayWnds(1, 2);
@@ -244,14 +149,15 @@ namespace PreviewDemo
                         irImageListPath[0].Add(irFile);
                     }
 
+                    //温度文件路径
                     string tempFilePath = directoryFileNames[0][item.Index] + "\\" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(0, 20)
                         + "temp" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(22) + ".dat";
 
+                    //获取温度数组
                     float[] tempDatas = Globals.GetTempFileToArray(tempFilePath);
-                    List<float> tempDataList = new List<float>();
-                    tempDataList = tempDatas.ToList();
-                    float maxTemp = tempDataList.Max();
-                    int index = tempDataList.IndexOf(maxTemp);
+                    List<float> tempDataList = tempDatas.ToList();
+                    float maxTemp = tempDataList.Max();//获取最高温度值
+                    int index = tempDataList.IndexOf(maxTemp);//最高温度值位置
                     int maxTempY = index / TEMP_WIDTH;
                     int maxTempX = index % TEMP_WIDTH;
 
@@ -265,10 +171,11 @@ namespace PreviewDemo
                     //cor.X = 100;
                     //cor.Y = 100;
 
-                    Globals.DrawCross(img, cor, OpenCvSharp.Scalar.FromRgb(220, 20, 60), 15, 1);
-
+                    //在图像上绘制最高温度值及十字光标
+                    Globals.DrawCross(img, cor, OpenCvSharp.Scalar.FromRgb(220, 20, 60), 15, 1);                    
                     Globals.DrawText(img, maxTemp.ToString("F1"), cor);
                     pics[0].Image = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(img);
+
                     label1.Text = "红外图像 共" + irImageListPath[0].Count + "张 第" + (currentIrImageIndex + 1) + "张";
                     label1.Visible = true;
                     ir_Image_preview_btn.Visible = true;
@@ -359,11 +266,9 @@ namespace PreviewDemo
 
 
 
-
-
                     string irImageFilePath = Path.GetFileNameWithoutExtension(irJpegFiles[currentIrImageIndex]);
 
-                    opJpegFiles = Directory.GetFiles(directoryFileNames[0][item.Index] + "\\" + "OP_Image");//读取所有红外图像文件
+                    opJpegFiles = Directory.GetFiles(directoryFileNames[0][item.Index] + "\\" + "OP_Image");//读取所有可见光图像文件
                     OpImageFileNames[0].Clear();
                     OpImageFileNames[0]= Globals.GetOPImages(irImageFilePath, opJpegFiles);
 
@@ -855,6 +760,96 @@ namespace PreviewDemo
              
             }
 
+        }
+
+        private void uiButton_query_Click(object sender, EventArgs e)
+        {
+            directoryFileNames[0].Clear();
+            pics[0].Image = null;
+            pics[1].Image = null;
+
+            listView_VehicleData.Items.Clear();
+            //if (listView_VehicleData.Items.Count >= 1)
+            //{
+            //    for (int j = listView_VehicleData.Items.Count - 1; j >= 0; j--)
+            //    {
+            //        listView_VehicleData.Items.RemoveAt(j);
+            //    }
+            //}
+
+            //string folderPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd") + "\\" + Globals.systemParam.ip_0; // 
+            string folderPath = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + Convert.ToDateTime(uiDatePickerStart.Text).ToString("yyyy_MM_dd"); // 
+           
+            DirectoryInfo imageDirectoryInfo = new DirectoryInfo(folderPath);
+            if (imageDirectoryInfo.Exists)
+            {
+                uiLabel3.Text = "";
+                subdirectoryEntries_0 = Directory.GetDirectories(folderPath);//获取当日所有过车数据文件夹路径
+
+                int count = 1;
+                for (int i = 0; i < subdirectoryEntries_0.Length; i++)
+                {
+                    string fileName = Path.GetFileName(subdirectoryEntries_0[i]);
+                    //int year = Convert.ToInt32(fileName.Substring(0, 4));//年
+                    //int month = Convert.ToInt32(fileName.Substring(4, 2));//月
+                    //int day = Convert.ToInt32(fileName.Substring(6, 2));//日
+                    //int hour = Convert.ToInt32(fileName.Substring(9, 2));//时
+                    //int min = Convert.ToInt32(fileName.Substring(11, 2));//分
+                    //int sec = Convert.ToInt32(fileName.Substring(13, 2));//秒
+
+                    directoryFileNames[0].Add(subdirectoryEntries_0[i]);
+                    //if (deviceCount > 1)
+                    //{
+                    //    directoryFileNames[1].Add(subdirectoryEntries_1[i]);
+                    //}
+                    ListViewItem item = new ListViewItem();
+
+                    item.SubItems[0].Text = count.ToString();
+                    listView_VehicleData.Columns[1].TextAlign = HorizontalAlignment.Left;
+                    listView_VehicleData.Columns[0].TextAlign = HorizontalAlignment.Right;
+
+                    fileName = fileName.Substring(0, 4) + "-" + fileName.Substring(4, 2) + "-" + fileName.Substring(6, 2) + " " + fileName.Substring(9, 2) + ":" + fileName.Substring(11, 2);
+                    item.SubItems.Add(fileName);
+                    listView_VehicleData.Items.Add(item);
+
+                    count++;
+
+
+                    //DateTime checkingDate = new DateTime(year, month, day, hour, min, sec);
+
+                    //DateTime startDate = new DateTime(uiDatePickerStart.Year, uiDatePickerStart.Month, uiDatePickerStart.Day, 0, 0, 0);
+                    //DateTime endDate = new DateTime(uiDatePickerStart.Year, uiDatePickerStart.Month, uiDatePickerStart.Day, 23, 59, 59);
+
+                    //if (checkingDate >= startDate && checkingDate <= endDate)
+                    //{
+                    //    directoryFileNames[0].Add(subdirectoryEntries_0[i]);
+                    //    if (deviceCount > 1)
+                    //    {
+                    //        directoryFileNames[1].Add(subdirectoryEntries_1[i]);
+                    //    }
+                    //    ListViewItem item = new ListViewItem();
+
+                    //    item.SubItems[0].Text = (count + 1).ToString();
+                    //    listView_VehicleData.Columns[1].TextAlign = HorizontalAlignment.Left;
+                    //    listView_VehicleData.Columns[0].TextAlign = HorizontalAlignment.Right;
+
+                    //    fileName = fileName.Substring(0, 4) + "-" + fileName.Substring(4, 2) + "-" + fileName.Substring(6, 2) + " " + fileName.Substring(9, 2) + ":" + fileName.Substring(11, 2);
+                    //    item.SubItems.Add(fileName);
+                    //    listView_VehicleData.Items.Add(item);
+
+                    //    count++;
+                    //}
+
+                   // Console.WriteLine("");
+
+                }
+
+
+            }
+            else
+            {
+                uiLabel3.Text = "没有过车数据";
+            }
         }
     }
 }

@@ -148,6 +148,11 @@ namespace PreviewDemo
             return tempFloats;
         }
 
+        /// <summary>
+        /// 将二进制温度文件转存为温度数组
+        /// </summary>
+        /// <param name="tempFilePath"></param>
+        /// <returns></returns>
         public static  float[] GetTempFileToArray(string tempFilePath)
         {
             float[] tempData = new float[TEMP_WIDTH * TEMP_HEIGHT];
@@ -200,6 +205,12 @@ namespace PreviewDemo
             Cv2.PutText(img, maxTemp.ToString(), new OpenCvSharp.Point(cor.X + 3, cor.Y + 25), OpenCvSharp.HersheyFonts.HersheySimplex, 0.8, OpenCvSharp.Scalar.LightGreen, 2);
         }
 
+        /// <summary>
+        /// 在可见光图像文件夹内选区与红外图像时间戳前后500ms以后的图像
+        /// </summary>
+        /// <param name="irImageName"></param>
+        /// <param name="opImagePaths"></param>
+        /// <returns></returns>
         public static List<string> GetOPImages(string irImageName, string[] opImagePaths)
         {
             List<string> imagePaths = new List<string>();

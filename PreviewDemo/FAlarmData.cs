@@ -114,8 +114,16 @@ namespace PreviewDemo
             op_image_next_btn.Left = op_image_preview_btn.Right + 25;
             op_image_next_btn.Visible = false;
 
+            line_Btn.Left = tipLable.Right + 20;
+            mouseFollowBtn.Left = line_Btn.Right + 2;
+            drawRectBtn.Left = mouseFollowBtn.Right + 20;
+            drawCircleBtn.Left = drawRectBtn.Right + 20;
+            deleteAllDrawBtn.Left = drawCircleBtn.Right + 20;
+
             uiDatePickerStart.Value = DateTime.Now;
             uiDatePickerEnd.Value = DateTime.Now;
+
+            uiLabel5.Left = listView_AlarmData.Width + panel1.Width * 3 / 7;
 
             uiComboBox_DeviceName.Items.Add(Globals.systemParam.deviceName_0);
             if (Globals.systemParam.deviceCount > 1)
@@ -261,7 +269,7 @@ namespace PreviewDemo
             DirectoryInfo imageDirectoryInfo = new DirectoryInfo(folderPath);
             if (imageDirectoryInfo.Exists)
             {
-                uiLabel3.Text = "";
+                tipLable.Text = "";
                 subdirectoryEntries_0 = Directory.GetDirectories(folderPath);
 
                 int count = 0;
@@ -298,7 +306,7 @@ namespace PreviewDemo
             }
             else
             {
-                uiLabel3.Text = "没有报警数据";
+                tipLable.Text = "没有报警数据";
             }
         }
 
@@ -324,6 +332,10 @@ namespace PreviewDemo
                     {
                         irImageListPath[0].Add(irFile);
                     }
+
+                    int carLocation = int.Parse(Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(23));
+                    uiLabel5.Text = "第 " + carLocation + " 辆车";
+                    uiLabel5.Visible = true;
 
                     string tempFilePath = directoryFileNames[0][item.Index] + "\\" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(0, 20)
                         + "temp" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(22) + ".dat";
@@ -408,6 +420,8 @@ namespace PreviewDemo
                 Mat img = Cv2.ImRead(irImageListPath[0][currentIrImageIndex]);
                 //Cv2.Line(img, 0, 0, 100, 100, OpenCvSharp.Scalar.FromRgb(0, 255, 0), 2);
 
+                int carLocation = int.Parse(Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(23));
+                uiLabel5.Text = "第 " + carLocation + " 辆车";
 
                 string tempFilePath = directoryFileNames[0][item.Index] + "\\" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(0, 20)
                       + "temp" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(22) + ".dat";
@@ -467,6 +481,9 @@ namespace PreviewDemo
                 currentIrImageIndex -= 1;
                 Mat img = Cv2.ImRead(irImageListPath[0][currentIrImageIndex]);
                 //Cv2.Line(img, 0, 0, 100, 100, OpenCvSharp.Scalar.FromRgb(0, 255, 0), 2);
+
+                int carLocation = int.Parse(Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(23));
+                uiLabel5.Text = "第 " + carLocation + " 辆车";
 
                 string tempFilePath = directoryFileNames[0][item.Index] + "\\" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(0, 20)
                   + "temp" + Path.GetFileNameWithoutExtension(irImageListPath[0][currentIrImageIndex]).Substring(22) + ".dat";

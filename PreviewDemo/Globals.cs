@@ -8,13 +8,15 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using System.Windows.Forms;
 using OpenCvSharp;
+using System.Drawing;
+using Sunny.UI;
 
 namespace PreviewDemo
 {
     class Globals
     {
 
-        public static SystemParam systemParam =  new SystemParam();
+        public static SystemParam systemParam = new SystemParam();
 
         public static string ImageDirectoryPath = Application.StartupPath + "\\" + "Image";
 
@@ -22,7 +24,7 @@ namespace PreviewDemo
 
         public static string RecordDirectoryPath = Application.StartupPath + "\\" + "Record";
 
-        public static string SDKLogPath =  Application.StartupPath + "\\" + "SdkLog\\";
+        public static string SDKLogPath = Application.StartupPath + "\\" + "SdkLog\\";
 
         public static string systemXml = Application.StartupPath + "\\SystemSetting.xml";
 
@@ -153,7 +155,7 @@ namespace PreviewDemo
         /// </summary>
         /// <param name="tempFilePath"></param>
         /// <returns></returns>
-        public static  float[] GetTempFileToArray(string tempFilePath)
+        public static float[] GetTempFileToArray(string tempFilePath)
         {
             float[] tempData = new float[TEMP_WIDTH * TEMP_HEIGHT];
             int k = 0;
@@ -200,6 +202,31 @@ namespace PreviewDemo
             Cv2.Line(img, cor, new OpenCvSharp.Point(cor.X, cor.Y - crossLine), color, lineWidth);
         }
 
+        /// <summary>
+        /// 设置按钮图片
+        /// </summary>
+        /// <param name="btn"></param>
+        /// <param name="imageName"></param>
+        public static void SetButtonImg(UISymbolButton btn, string imageName)
+        {
+            btn.Image = Image.FromFile(Globals.startPathInfo.FullName + "\\Resources\\" + imageName);
+        }
+
+        public static void DrawCross(Graphics graphics, int x, int y, int crossLine, Pen pen)
+        {
+            // 绘制线条，指定起点和终点
+            System.Drawing.Point startPoint = new System.Drawing.Point(x, y);
+            System.Drawing.Point lefPoint = new System.Drawing.Point(x - crossLine, y);
+            System.Drawing.Point rightPoint = new System.Drawing.Point(x + crossLine, y);
+            System.Drawing.Point topPoint = new System.Drawing.Point(x, y - crossLine);
+            System.Drawing.Point bottomPoint = new System.Drawing.Point(x, y + crossLine);
+            graphics.DrawLine(pen, startPoint, lefPoint);
+            graphics.DrawLine(pen, startPoint, rightPoint);
+            graphics.DrawLine(pen, startPoint, topPoint);
+            graphics.DrawLine(pen, startPoint, bottomPoint);
+        }
+
+
         public static void DrawText(Mat img, string maxTemp, OpenCvSharp.Point cor)
         {
             Cv2.PutText(img, maxTemp.ToString(), new OpenCvSharp.Point(cor.X + 3, cor.Y + 25), OpenCvSharp.HersheyFonts.HersheySimplex, 0.8, OpenCvSharp.Scalar.LightGreen, 2);
@@ -239,5 +266,49 @@ namespace PreviewDemo
 
             return imagePaths;
         }
+
+        public static float[,] ChangeTempToArray(float[] temp, int width, int height)
+        {
+            float[,] realTemps = new float[width, height];
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    realTemps[i, j] = temp[j * width + i];
+
+                }
+            }
+
+            return realTemps;
+        }
+
+        /// <summary>
+        /// 测温工具模式
+        /// </summary>
+        public enum DrawMode
+        {
+            NO_DRAW = -1,
+            DRAW_POINT,
+            DRAW_LINE,
+            DRAW_AREA,
+            DRAW_CIRCLE,
+            DRAW_POLYGON,
+            DRAW_MOUSE//鼠标跟随
+        }
+
+        public struct IRC_NET_POINT
+        {
+            public int x; ///< x坐标
+            public int y; ///< y坐标
+        }
+
+        public static void DrawCrossLine(Graphics g, float startX, float startY, Pen pen, int lineLength)
+        {
+            g.DrawLine(pen, startX, startY, startX + lineLength, startY);
+            g.DrawLine(pen, startX, startY, startX - lineLength, startY);
+            g.DrawLine(pen, startX, startY, startX, startY + lineLength);
+            g.DrawLine(pen, startX, startY, startX, startY - lineLength);
+        }
+
     }
 }

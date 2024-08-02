@@ -55,14 +55,14 @@
             this.uiPanel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(243)))), ((int)(((byte)(249)))), ((int)(((byte)(255)))));
             this.uiPanel1.Controls.Add(this.deleteAllDrawBtn);
             this.uiPanel1.Controls.Add(this.drawCircleBtn);
+            this.uiPanel1.Controls.Add(this.stopPrewviewBtn);
             this.uiPanel1.Controls.Add(this.drawRectBtn);
+            this.uiPanel1.Controls.Add(this.startPrewviewBtn);
             this.uiPanel1.Controls.Add(this.takePicBtn);
             this.uiPanel1.Controls.Add(this.uiSymbolButton2);
             this.uiPanel1.Controls.Add(this.mouseFollowBtn);
             this.uiPanel1.Controls.Add(this.stopRecordBtn);
             this.uiPanel1.Controls.Add(this.startRecordBtn);
-            this.uiPanel1.Controls.Add(this.stopPrewviewBtn);
-            this.uiPanel1.Controls.Add(this.startPrewviewBtn);
             this.uiPanel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.uiPanel1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
             this.uiPanel1.FillColor2 = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
@@ -76,7 +76,7 @@
             this.uiPanel1.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
             this.uiPanel1.RectColor = System.Drawing.Color.Transparent;
             this.uiPanel1.RectSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.None;
-            this.uiPanel1.Size = new System.Drawing.Size(892, 49);
+            this.uiPanel1.Size = new System.Drawing.Size(1325, 49);
             this.uiPanel1.Style = Sunny.UI.UIStyle.Custom;
             this.uiPanel1.StyleCustomMode = true;
             this.uiPanel1.TabIndex = 3;
@@ -238,7 +238,7 @@
             this.stopRecordBtn.ForeColor = System.Drawing.Color.Transparent;
             this.stopRecordBtn.Image = ((System.Drawing.Image)(resources.GetObject("stopRecordBtn.Image")));
             this.stopRecordBtn.LightColor = System.Drawing.Color.Transparent;
-            this.stopRecordBtn.Location = new System.Drawing.Point(141, 8);
+            this.stopRecordBtn.Location = new System.Drawing.Point(62, 8);
             this.stopRecordBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
             this.stopRecordBtn.MinimumSize = new System.Drawing.Size(1, 1);
             this.stopRecordBtn.Name = "stopRecordBtn";
@@ -262,7 +262,7 @@
             this.startRecordBtn.ForeColor = System.Drawing.Color.Transparent;
             this.startRecordBtn.Image = ((System.Drawing.Image)(resources.GetObject("startRecordBtn.Image")));
             this.startRecordBtn.LightColor = System.Drawing.Color.Transparent;
-            this.startRecordBtn.Location = new System.Drawing.Point(98, 8);
+            this.startRecordBtn.Location = new System.Drawing.Point(19, 8);
             this.startRecordBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
             this.startRecordBtn.MinimumSize = new System.Drawing.Size(1, 1);
             this.startRecordBtn.Name = "startRecordBtn";
@@ -287,7 +287,7 @@
             this.stopPrewviewBtn.ForeColor = System.Drawing.Color.Transparent;
             this.stopPrewviewBtn.Image = ((System.Drawing.Image)(resources.GetObject("stopPrewviewBtn.Image")));
             this.stopPrewviewBtn.LightColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.Location = new System.Drawing.Point(55, 8);
+            this.stopPrewviewBtn.Location = new System.Drawing.Point(141, 8);
             this.stopPrewviewBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
             this.stopPrewviewBtn.MinimumSize = new System.Drawing.Size(1, 1);
             this.stopPrewviewBtn.Name = "stopPrewviewBtn";
@@ -312,7 +312,7 @@
             this.startPrewviewBtn.ForeColor = System.Drawing.Color.Transparent;
             this.startPrewviewBtn.Image = ((System.Drawing.Image)(resources.GetObject("startPrewviewBtn.Image")));
             this.startPrewviewBtn.LightColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.Location = new System.Drawing.Point(12, 8);
+            this.startPrewviewBtn.Location = new System.Drawing.Point(107, 8);
             this.startPrewviewBtn.MinimumSize = new System.Drawing.Size(1, 1);
             this.startPrewviewBtn.Name = "startPrewviewBtn";
             this.startPrewviewBtn.RectColor = System.Drawing.Color.Transparent;
@@ -336,7 +336,7 @@
             this.listView_trainInfo.HideSelection = false;
             this.listView_trainInfo.Location = new System.Drawing.Point(0, 0);
             this.listView_trainInfo.Name = "listView_trainInfo";
-            this.listView_trainInfo.Size = new System.Drawing.Size(248, 442);
+            this.listView_trainInfo.Size = new System.Drawing.Size(248, 725);
             this.listView_trainInfo.TabIndex = 5;
             this.listView_trainInfo.UseCompatibleStateImageBehavior = false;
             // 
@@ -359,7 +359,8 @@
             // uiSplitContainer1.Panel2
             // 
             this.uiSplitContainer1.Panel2.Controls.Add(this.listView_trainInfo);
-            this.uiSplitContainer1.Size = new System.Drawing.Size(250, 495);
+            this.uiSplitContainer1.Size = new System.Drawing.Size(250, 809);
+            this.uiSplitContainer1.SplitterDistance = 81;
             this.uiSplitContainer1.SplitterWidth = 1;
             this.uiSplitContainer1.TabIndex = 6;
             // 
@@ -370,7 +371,7 @@
             this.uiLabel1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
             this.uiLabel1.Location = new System.Drawing.Point(0, 0);
             this.uiLabel1.Name = "uiLabel1";
-            this.uiLabel1.Size = new System.Drawing.Size(248, 48);
+            this.uiLabel1.Size = new System.Drawing.Size(248, 79);
             this.uiLabel1.TabIndex = 0;
             this.uiLabel1.Text = "当日过车信息";
             this.uiLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -379,7 +380,7 @@
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.ClientSize = new System.Drawing.Size(892, 544);
+            this.ClientSize = new System.Drawing.Size(1325, 858);
             this.Controls.Add(this.uiSplitContainer1);
             this.Controls.Add(this.uiPanel1);
             this.Name = "FMonitor";

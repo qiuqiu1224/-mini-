@@ -42,7 +42,7 @@ namespace PreviewDemo
 
         UISymbolButton startPrewviewBtn, stopPrewviewBtn, startRecordBtn, stopRecordBtn,
             mouseFollowBtn, takePicBtn, drawRectBtn, drawCircleBtn, deleteAllDrawBtn;
-
+        UILabel info;
         ListView trainListView;
         private bool isTrainStart = false;//开始采集标志
         List<Socket> sockets = new List<Socket>();//连接红外相机获取温度socket
@@ -115,6 +115,8 @@ namespace PreviewDemo
 
         Thread GetImageDataThread;//获取温度数据线程
         Thread SaveOPImageThread;//保存可见光图像线程
+        Thread MonitorTrainComingThread;//监测来车线程
+        Thread MonitorTrainLeaveThread;//监测过车线程
 
         byte cacheDataCount = 0;//红外热成像缓存数据数量
 
@@ -129,11 +131,575 @@ namespace PreviewDemo
 
         List<string> saveReportPath = new List<string>();//保存过车数据根目录集合
         List<string> alarmReportPath = new List<string>();//保存报警数据根目录集合
+        List<string> trainInfoReportPath = new List<string>();//保存车辆信息根目录集合
 
         IndexListInfo indexList;
         int trainIndexCount = 0;
 
         #endregion
+
+
+        #region 过车检测
+        [System.Runtime.InteropServices.DllImport("KERNEL32")]
+        private static extern bool QueryPerformanceFrequency(ref ulong lpFrequency);
+        [System.Runtime.InteropServices.DllImport("KERNEL32")]
+        private static extern bool QueryPerformanceCounter(ref ulong lpCounter);
+        ushort m_wSeniorN1;     //开机次数
+        ushort m_wSensorN2;     //开门次数
+        ushort m_wSensorN3;     //关门次数
+        ushort m_wSensorN4;     //关门次数
+        ushort[] m_WheelSeniorCount = new ushort[4];
+        UInt64 m_lgT2_1, m_lgT2_2, m_lgTemp2; //first,second, current
+        UInt64 m_lgT3_1, m_lgT3_2, m_lgTemp3;
+        UInt64 m_lgT2_To_3;    // #2 #3 time 270
+        UInt64 m_lgTCPU;
+
+        internal AutoResetEvent readN1Event = new AutoResetEvent(false);
+        internal AutoResetEvent readN2Event = new AutoResetEvent(false);
+        internal AutoResetEvent readN3Event = new AutoResetEvent(false);
+
+        internal AutoResetEvent readN4Event = new AutoResetEvent(false);
+        internal AutoResetEvent trainComingEvent = new AutoResetEvent(false);//来车，开始接车
+        internal AutoResetEvent trainLeaveEvent = new AutoResetEvent(false);  //列车已过，停止接车
+
+        internal ManualResetEvent killEvent = new ManualResetEvent(false);
+        internal ManualResetEvent waitEvent = new ManualResetEvent(false);//test
+
+
+        CarTableDeal mCarTableDel = new CarTableDeal();
+        UInt64[] axleTimeTable = new UInt64[1024];//轴的时间戳表
+        ushort[] axleSpeedTable = new ushort[1024];//轴的速度表
+        ushort m_AxleCount = 0;
+        ushort axle_Distance;
+
+        ushort m_CarSum;
+        ushort m_AxleSum;
+
+        internal WaitHandle[] waitHandle = new WaitHandle[5];
+
+
+        Thread dealTrainThread;
+
+        byte[] data_buffer = new byte[0x6000];
+        int data_count = 0;
+        int deal_point = 0;
+        bool kjFlag = false;
+        #endregion
+
+        private void DealTrain()
+        {
+            waitHandle[0] = readN1Event;
+            waitHandle[1] = readN2Event;
+            waitHandle[2] = readN3Event;
+            waitHandle[3] = readN4Event;
+            waitHandle[4] = killEvent;
+            int m_WaitTrainPassedTime = 15000;//15s
+
+            ushort m_speedTemp = 240;  // default : 80km/h , adbout: 240 dm/s
+
+            for (int i = 0; i < 4; i++) m_WheelSeniorCount[i] = 0;
+
+
+            while (serialPort1.IsOpen == true)
+            {
+                int k = WaitHandle.WaitAny(waitHandle, m_WaitTrainPassedTime, false);
+                switch (k)
+                {
+                    case 0:
+                        m_WaitTrainPassedTime = 15000;
+                        m_WheelSeniorCount[0]++;
+                        if (kjFlag) break;
+                        if ((m_WheelSeniorCount[0] == 5) && ((m_WheelSeniorCount[1] + m_WheelSeniorCount[2]) < m_WheelSeniorCount[0]))
+                        {
+                            kjFlag = true;
+                            m_WheelSeniorCount[1] = 0;
+                            m_WheelSeniorCount[2] = 0;
+                            m_AxleCount = 0;
+                            m_lgT2_1 = 0;
+                            m_lgT2_2 = 0;
+                            m_lgT3_1 = 0;
+                            m_lgT3_2 = 0;
+                            m_lgTemp2 = 0;
+                            m_lgTemp3 = 0;
+                            m_lgT2_To_3 = 20;
+                            //textBox1.Text = "";
+                            trainComingEvent.Set();  //发出来车指令，开始处理过车图像
+                        }
+                        break;
+                    case 1:
+                        m_WaitTrainPassedTime = 15000;
+                        if (!kjFlag) break;
+                        m_WheelSeniorCount[1]++;
+                        if (m_WheelSeniorCount[1] == 1) m_lgT2_1 = m_lgTemp2;
+                        else m_lgT2_1 = m_lgT2_2;
+                        m_lgT2_2 = m_lgTemp2;
+                        break;
+                    case 2:
+                        m_WaitTrainPassedTime = 15000;
+                        if (!kjFlag) break;
+                        if ((m_lgTemp3 <= m_lgTemp2) && (m_lgTemp3 < 0x1000000)) break;
+                        m_WheelSeniorCount[2]++;
+                        m_AxleCount++;
+                        if (m_AxleCount > 1000) m_AxleCount = 1000;
+
+                        m_lgT2_To_3 = m_lgTemp3 - m_lgTemp2;
+                        axleTimeTable[m_AxleCount - 1] = m_lgTemp3;//轴的时间戳表
+                        try
+                        {
+                            if (m_WheelSeniorCount[2] == 1) m_lgT3_1 = m_lgTemp3;
+                            else m_lgT3_1 = m_lgT3_2;
+                            m_lgT3_2 = m_lgTemp3;
+
+                            //  textBox1.Text += m_AxleCount.ToString();
+                            //  textBox1.Text += " c2_1: " + m_lgT2_1.ToString() + " c2_2: " + m_lgT2_2.ToString();
+                            // m_lgTemp2 = m_lgT2_2 - m_lgT2_1;
+                            //  textBox1.Text += "  c2:" + m_lgTemp2.ToString();
+
+                            //   textBox1.Text += " c3_1: " + m_lgT3_1.ToString() + " c3_2: " + m_lgT3_2.ToString();
+                            //   m_lgTemp3 = m_lgT3_2 - m_lgT3_1;
+                            //   textBox1.Text += "  c3: " + m_lgTemp3.ToString();
+
+                            //textBox1.Text += "  c2-3: " + m_lgT2_To_3.ToString();
+
+                            // m_speedTemp = (ushort)(27 * m_lgTCPU / m_lgT2_To_3 / 10);
+                            // m_speedTemp = (ushort)(27 * 1000 / m_lgT2_To_3);
+                            m_speedTemp = (ushort)(27 * 36000 / m_lgT2_To_3);
+                            //textBox1.Text += " sp:" + m_speedTemp.ToString();
+                            axleSpeedTable[m_AxleCount - 1] = m_speedTemp;//轴的速度表 单位 0.1km/h
+
+                            if (m_WheelSeniorCount[2] > 1)
+                            {
+                                ushort axle_Distance1 = (ushort)((m_lgT2_2 - m_lgT2_1) * 270 / m_lgT2_To_3);//mm
+                                //textBox1.Text += "  zj1:" + axle_Distance1.ToString();
+
+                                axle_Distance = (ushort)((m_lgT3_2 - m_lgT3_1) * 270 / m_lgT2_To_3);//mm
+                                //textBox1.Text += "  zj2:" + axle_Distance.ToString();
+                                axle_Distance += axle_Distance1;
+                                axle_Distance /= 200;//pingjun   mm to dm
+                                if ((axle_Distance < 8) || (axle_Distance > 0xff)) m_AxleCount--;
+                                mCarTableDel.distance[m_AxleCount - 2] = (byte)axle_Distance;
+                                m_WaitTrainPassedTime = 6000 + 25 * 36 * 1000 / m_speedTemp;//6s + 25m/speed
+                            }
+                        }
+                        catch { }
+                        //textBox1.Text += "\r\n";
+
+                        break;
+                    case 3:
+                        m_WaitTrainPassedTime = 15000;
+                        break;
+                    case 4:
+                        m_WaitTrainPassedTime = 15000;
+                        break;
+                    case WaitHandle.WaitTimeout:
+                        m_WaitTrainPassedTime = 20000;
+                        if (kjFlag)
+                        {
+                            m_wSeniorN1 = m_WheelSeniorCount[0];     //开机次数
+                            m_wSensorN2 = m_WheelSeniorCount[1];     //开门次数
+                            m_wSensorN3 = m_WheelSeniorCount[2];     //关门次数
+                            m_wSensorN4 = m_WheelSeniorCount[3];     //关门次数
+                            mCarTableDel.distance[m_AxleCount - 1] = 0xff;
+                            m_AxleSum = m_AxleCount;
+                            if (m_AxleSum > 5) CreateCarTable();
+                            //textBox1.Text += "AxleSum:" + m_AxleSum.ToString() + "  ";
+                            //textBox1.Text += "CarSum:" + m_CarSum.ToString() + "\r\n";
+
+                            trainLeaveEvent.Set();
+                            Thread.Sleep(1000);
+                        }
+                        data_count = 0; deal_point = 0;
+                        kjFlag = false;
+                        m_AxleCount = 0;
+                        m_lgT2_1 = 0;
+                        m_AxleCount = 0;
+                        m_lgT2_1 = 0;
+                        m_lgT2_2 = 0;
+                        m_lgT3_1 = 0;
+                        m_lgT3_2 = 0;
+                        m_lgTemp2 = 0;
+                        m_lgTemp3 = 0;
+                        m_lgT2_To_3 = m_lgTCPU / 100;
+
+                        for (int i = 0; i < 4; i++) m_WheelSeniorCount[i] = 0;
+                        Thread.Sleep(5000);
+                        break;
+
+                }
+            }
+        }
+
+        public class cartabtag
+        {
+            public byte CarType;
+            public byte BearTypeAxle;
+            public ushort AxleAddr;
+            public byte[] distance;
+            public byte count;
+            public cartabtag()
+            {
+                distance = new byte[32];
+            }
+        }
+
+        private int CreateCarTable()
+        {
+            m_CarSum = 0;
+            mCarTableDel.make_car_table();
+            m_CarSum = mCarTableDel.carsum;
+
+            return m_CarSum;
+        }
+
+        public class CarTableDeal
+        {
+            public byte[] distance = new byte[1024];
+            public cartabtag[] CTPtr = new cartabtag[256];
+            public byte[] Axle_distance_table = new byte[2048];
+            public ushort carsum1, matchflag, checksum, conum, carsum, specialcount, missaxle;//, aLl_car_number, tempcarsum, tempnomatchaxle;
+
+            public CarTableDeal()
+            {
+                int i;
+                for (i = 0; i < CTPtr.GetLength(0); i++) CTPtr[i] = new cartabtag();
+
+                int[] Axle_distance_table_temp = {
+        3,   27,33,  80,86,  27,33, 0x80,	//中华之星机车
+		3,   22,28, 153,158, 22,28, 0x80,	//秦沈客车
+		11,  12,18, 12,18, 14,20, 12,18, 12,18, 49,141, 12,18, 12,18, 14,20, 12,18, 12,18, 0xe0,  //	;多轴货车
+		19,  10,18, 10,18, 10,18, 10,18, 15,64, 10,18, 10,18, 10,18, 10,18, 21,64, 10,18, 10,18, 10,18, 10,18, 15,64, 10,18, 10,18, 10,18, 10,18, 0xe6,		//  ;双联平车D30G 钳夹车D30A中中挡27的 需要增加如下---- 2007-05-14   20170810  移至10轴车前
+		9,   10,16,  9,15,  9,15, 10,16, 63,141, 10,16,  9,15,  9,15, 10,16, 0xe1,					//	;多轴货车
+		9,   11,17, 11,17, 11,17, 11,17, 42,141, 11,17, 11,17, 11,17, 11,17, 0xe2,				//	;多轴货车
+
+		9,   14,20, 19,25, 14,20, 24,38, 23,29, 11,17, 11,17, 11,17, 21,27, 0x1,				//	;韶山
+		9,   21,27, 11,17, 11,17, 11,17, 23,29, 24,38, 14,20, 19,25, 14,20, 0x1,				//	;（上车韶山 0x1反向）
+	
+		9,   22,27, 21,25, 16,20, 31,36, 25,29, 12,17, 12,16, 12,16, 22,27, 0x2,	//  ;SY    //add:2009/03/02  cm
+		9,   22,27, 12,16, 12,16, 12,17, 25,29, 31,36, 16,20, 21,25, 22,27, 0x2,	//  ;（上车SY 0x2反向）
+
+		7,   23,30, 55,80, 23,30, 53,67, 23,30, 55,80, 23,30, 0x5,			//  ;大秦线西门子机车  //edit: 25 ->23, 68 -> 80 2009/12/21  cm
+		7,   26,30, 32,36, 26,30, 56,61, 26,30, 32,36, 26,30, 0x3,			//  ;DJ1   //add:2009/03/02  cm
+		7,   26,34, 48,59, 26,34, 48,62, 26,34, 48,59, 26,34, 0x4,			//	;韶山  //edit: 0x3b -> 0x3E 2009/03/02  cm
+
+		5,   16,19, 16,19, 55,100, 16,19, 16,19, 0x10,		//	;GKD2/GKD3B/DF4/DF4B/DF4C/DF4D/DF5/DF7/DF7B/DF7C/DF7D/DF7E/DF7G/DF8/DF8B/DF8CJ/DF12/QZGYNRJC
+		5,   17,22, 14,20, 95,115, 14,20, 17,22, 0x11,		//19 17 105 17 19 38 新增加和谐号机车 add 2010/02/26 cm
+		5,   17,22, 14,20, 54, 67, 14,20, 17,22, 0x12,		//东风 呼局丢失机车轴距 add 2011/04/22 cm 19 16 60 16 19
+		//5,   17,24, 17,23, 75,100, 17,23, 17,24, 0x13,		//	;ND4/DF11   18,23更改为17,23 cm 2010/09/30	//因大秦线两货车连接距19常误判为一机车+二特种车，故台车加大限制 
+		5,   18,27, 18,27, 75,100, 18,27, 18,27, 0x13,		//	;add 2014/6/23 HX3D轴距23.5 20.0 80.2 20 23.5  将24->放大28 ND4/DF11   18,23更改为17,23 cm 2010/09/30	//因大秦线两货车连接距19常误判为一机车+二特种车，故台车加大限制 
+															//	;add 2014/7/29 HXD3D轴距 20.0 23.5 80.2 23.5 20 23->28
+															//  17,28-->18,27   因易与货车轴距  18 81 18 27 冲突修改，因修改23号开机丢18，误判为一机车与特种合并情况   20181119
+		//5,   17,25, 17,25, 38,68, 17,25, 17,25, 0x11,		//	;new ND2/ND3 edit 2009/12/02 cm 放开后如果出现特种,会把4轴+2轴 连在一起 6轴
+		5,   17,25, 17,25, 30,80,  17,25, 17,25, 0x14,		//	;SS7E SS9 DF DF2 DF3 GK2/3-1/2  ND5 ND2 ND3 ND5 合并 2009/12/25
+		5,   19,25, 15,21, 34,40,  15,21, 19,25, 0x15,		//	;GK2C
+		5,   20,26, 17,23, 66,77,  17,23, 20,26, 0x16,		//	;SS3/SS6/SS6B
+		5,   20,26, 20,26, 53,65,  20,26, 20,26, 0x17,		//	;SS1
+		5,   20,26, 20,26, 73,86,  20,26, 20,26, 0x18,		//	;6G
+		5,   21,25, 16,20, 80,100, 16,20, 21,25, 0x19,		//	;NY5/NY6/NY7/  
+		
+		5,   25,31, 25,31, 40,48,  25,31, 25,31, 0x1A,		//	;乌兹别克斯坦  28 28 44 28 28
+		5,   26,32, 38,46, 26,32,  38,46, 26,32, 0x1B,		//	;SS7/SS7B/SS7C/SS7D/6K
+
+		3,   20,27, 72,93, 20,27, 0x20,	//   ;东方红 0x5f->0x5d 2006-03-06
+		3,   20,27, 42,48, 20,27, 0x21,	//   ;韶山8		
+		3,   27,32, 58,80, 27,32, 0x22,	//   ;SS8 KZ4A DJ2 DFH1  edit: 2010/05/26 
+	
+		//3,   19,27, 38,50, 19,27, 0x1a,	//   ;东风5  佳木斯  2003-02-18
+		//3,   19,28, 50,72, 19,28, 0x1c,	//   ;北京  edit: 0x19 -> 0x1C 2009/03/02  cm
+		3,   19,28, 38,72, 19,28, 0x23,	//   ;东风5  佳木斯  北京 合并2009/12/25
+
+		4,   15,21, 31,38, 31,38, 15,21, 0x85,				//	;五轴货车 C5D 1750	3600	3600	1750
+		15,  6,25, 6,25, 6,25,  6,25, 6,25, 6,25, 6,25, 45,177, 6,25, 6,25, 6,25,  6,25, 6,25, 6,25, 6,25, 0xe3,//	;多轴货车   2003-10-20日移到此处，优先判多轴
+		15,  6,25, 6,25, 6,25, 22,40, 6,25, 6,25, 6,25, 45,177, 6,25, 6,25, 6,25, 22,40, 6,25, 6,25, 6,25, 0xe4,
+		//  ;凹底平车D26、D25A、D25 落孔下车D26B 可归到此处但因D25A达到34，故将 0x23->0x28  2007-05-14   
+		3,   14,20, 43,156, 14,20, 0x82,	//   ;合并 四轴货车 凹底平车D5、D70可以归到此处 具体见长大货车轴距统计表 2003-12-29  //2007-05-14 //cm 2012/2/8 edit 42->43 保证六轴特种 18,31,18,31,18 43不被当成4轴+2轴
+
+		//3,   19,29, 109,224, 19,29, 0x80, //   ;四轴客车   //2002-5-23
+		//3,   24,30, 142,148, 24,30, 0x80, //   ;长大四轴客车
+		3,   19,28, 88,110, 19,28, 0x83,		//  ;机保  合并 2009/12/25
+		3,   20,30, 110,224, 20,30, 0x80,	//   ;四轴客车   合并 2009/12/25 cm
+
+		4,   46,52, 12,16, 90,98, 12,16, 0x80,		//	;长大五轴客车 //武汉 2000-01-18
+		4,   12,16, 90,98, 12,16, 46,52, 0x80,		//	;（上车长大五轴客车反向）
+		7,   13,17, 24,28, 13,17, 28,32, 13,17, 24,28, 13,17, 0xe1,//	;多轴货车
+	
+		//3,   13,17, 24,28, 13,17, 0x83,		//   ;首车 del 下车包含该轴距 2009/12/24 cm
+		//3,   12,18, 24,30, 12,18, 0x89,		//   ;特种货车 //济南 2000-01-16 del
+		3,   13,19, 24,30, 13,19, 0x87,		//   ;特种货车 edit 合并 包含上述2车 2009/12/24 cm
+	
+		//3,   14,20, 142,152, 14,20, 0x82, //   ;四轴货车
+		//3,   15,19, 148,156, 15,19, 0x8a,		//   ;特种货车 del 2009/12/24 上车修改轴距后包含
+		//3,   13,21, 126,134, 13,21, 0x8e,		//   ;特种货车;//99-1-19
+		//3,   14,20, 142,156, 14,20, 0x82, //   ;四轴货车 合并 edit: 152->156 2009/12/24 del 2010/05/26
+		
+		//3,   21,28, 92,98, 21,28, 0x81,	//   ;机保;//fengtai jibao
+		//3,   19,27, 88,110, 19,27, 0x81,		//  ;机保  //2007-05-14 将0x64->0x6e 为了五节式机械保温车 23 100 23
+
+			
+		3,   19,26, 33,43, 19,26, 0x88,			//   ;特种货车 //济南 2000-01-16
+		3,   24,30, 144,150, 24,30, 0x8b,		//   ;特种货车 和客车轴距接近 轴距表中无 2009/12/25
+		3,   10,14, 150,158, 10,14, 0x8d,		//   ;特种货车;//12 154 12
+		3,   15,19, 170,200, 15,19, 0x82,
+        3,   9,13, 132,140, 9,13, 0x8c,		//   ;特种货车;//11 136 11
+		3,   9,17, 33,40, 9,17, 0x8f,			//	 ;特种货车 
+		5,   26,30, 14,19, 127,135, 26,30, 14,19, 0x90,	//	;特种货车//seprate 98,10,24==28 16 130 28 16
+		5,   14,19, 26,30, 127,135, 14,19, 26,30, 0x91,	//  ;（上车特种货车//seprate反向）
+		5,   14,20, 28,34, 14,20, 28,34, 14,20, 0x92,	//	;特种货车C100//18,31,18,31,18 胡目天提供  //2007-11-09
+		5,   24,28, 37,43, 24,28, 37,43, 24,28, 0x93,	//	;特种货车  //武汉 2000-01-18
+		5,   6,25, 6,25, 100,177, 6,25, 6,25, 0x94,		//	;多轴货车 // 2007-05-14 6轴凹底平车D10、新D10 可归到此处 该车可能跟机车冲突 45 修改为68 edit 2014/6/23 68->100 防止和新和谐3D，3C，1D冲突 
+		5,   11,15, 11,15, 50, 60, 11,15, 11,15, 0x95,	//  ;多轴货车 2012/8/12 add cm 嘉峪关 6轴16A车 13.2 13.2 55.7 13.2 13.2  
+		
+		7,   9,22,  9,22,  9,22, 80,150, 9,22, 9,22, 9,22, 0xe1,//  ;加8轴长大货车轴距  凹底平车D6\D12\D15\D16G\D22\D27\D22G\D17A  2007-05-14 
+	
+		19,  6,25, 6,25, 6,25, 6,25, 6,25, 6,25, 6,25, 6,25, 6,25, 45,177, 6,25, 6,25, 6,25, 6,25, 6,25, 6,25, 6,25, 6,25, 6,25, 0xe5,		//  ;凹底平车D9G、落孔下车D19G、钳夹车D30A中中挡148的可归到此处  2007-05-14 
+		
+		11,  12,16, 12,16, 28,32, 12,16, 12,16, 144,153, 12,16, 12,16, 28,32, 12,16, 12,16, 0xe7,		//  ;多轴货车 add 2009/03/02 cm
+	//	23,  6,25,6,25,6,25,6,41,6,25,6,25,6,25,6,25,6,25,6,25,6,25,45,177,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,41,6,25,6,25,6,25, 0xe8,		//	;多轴货车 //加凹底平车D32、落孔下车、350T 轴距  24轴----2007-05-14 
+		23,  6,25,6,25,6,25,6,45,6,25,6,25,6,25,6,25,6,25,6,25,6,25,45,177,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,45,6,25,6,25,6,25, 0xe8,		//2017-08-02 LYCH 41-->45	;多轴货车 //加凹底平车D32、落孔下车、350T 轴距  24轴----2007-05-14 
+		23,  10,22,10,22,10,22,32,44,10,22,10,22,10,22,10,22,10,22,10,22,10,22,133,160,10,22,10,22,10,22,10,22,10,22,10,22,10,22,32,44,10,22,10,22,10,22, 0xe9,		//	;多轴货车 
+		23,  6,17,6,17,19,33,6,17,6,17,37,49,6,17,6,17,19,33,6,17,6,17,45,177,6,17,6,17,19,33,6,17,6,17,37,49,6,17,6,17,19,33,6,17,6,17, 0xea,		//  ;真实轴距13 13 29 13 13 44 13 13 29 13 13 151 13 13 29 13 14 45 13 13 29 13 13 
+		23,  6,17,6,17,19,33,6,17,6,17,37,49,6,17,6,17,19,33,6,17,6,17,45,177,6,17,6,17,19,33,6,17,6,17,37,49,6,17,6,17,19,33,6,17,6,17, 0xea,		//  2017-08-02 LYCH DA37
+
+		23,  11,17,11,17,15,21,11,17,11,17,46,58,11,17,11,17,14,20,11,17,11,17,128,159,11,17,11,17,14,20,11,17,11,17,46,58,11,17,11,17,15,21,11,17,11,17, 0xea,		//  lych 2017-08-02  DK36A
+	
+//		23,  11,17,11,17,14,21,11,17,11,17, 48,56, 11,17,11,17,14,21,11,17,11,17, 133,153, 11,17,11,17,14,21,11,17,11,17, 48,56, 11,17,11,17,14,21,11,17,11,17, 0xef, //add 2014/05/15 cm 24轴 360T落孔空车 轴距14 14 17.5 14 14 52 14 14 17 14 14 143.5 14 14 17 14 14 52 14 14 17.5 14 14 
+     	23,  11,17,11,17,14,21,11,17,11,17, 40,56, 11,17,11,17,14,21,11,17,11,17, 30,44, 11,17,11,17,14,21,11,17,11,17, 40,56, 11,17,11,17,14,21,11,17,11,17, 0xef, //2017-08-02 lychDQ35空
+	    23,  11,17,11,17,14,25,11,17,11,17, 40,65, 11,17,11,17,14,25,11,17,11,17, 133,183, 11,17,11,17,14,25,11,17,11,17, 40,65, 11,17,11,17,14,25,11,17,11,17, 0xef, //2017-08-02 lychDQ35重 DA37
+
+//	23,  11,17,11,17,11,17,11,17,11,17, 40,49, 11,17,11,17,26,34,11,17,11,17, 133,153, 11,17,11,17,26,34,11,17,11,17, 40,49, 11,17,11,17,11,17,11,17,11,17, 0xef, //add 2014/06/23 cm 24轴 DK36落孔空车 轴距14 14 14 14 14 45 14 14 30 14 14 143.4 14 14 30 14 14 45 14 14 30 14 14 
+        23,  11,17,11,17,26,34,11,17,11,17, 39,52, 11,17,11,17,26,34,11,17,11,17, 133,165, 11,17,11,17,26,34,11,17,11,17, 40,49, 11,17,11,17,26,34,11,17,11,17, 0xef, //2017-08-02 lych D32A DK36   add 2014/06/23 cm 24轴 DK36落孔空车 轴距14 14 14 14 14 45 14 14 30 14 14 143.4 14 14 30 14 14 45 14 14 30 14 14 
+
+		27,  6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,45,177,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25,6,25, 0xeb,
+        27,  10,22,10,22,10,22,10,22,10,22,38,50,10,22,10,22,10,22,10,22,10,22,10,22,10,22,155,195,10,22,10,22,10,22,10,22,10,22,10,22,10,22,38,50,10,22,10,22,10,22,10,22,10,22, 0xec,		// D45 ;落孔下车450T 28轴轴距----2007-05-14 加
+	    27,  11,17,11,17,16,25,11,17,11,17, 11,17, 46,66,11,17,11,17,11,17,16,25, 11,17, 11,17,24,40,11,17,11,17,16,25,11,17,11,17, 11,17, 46,66,11,17,11,17,11,17,16,25, 11,17, 11,17, 0xeb, //2017-08-02 lych DQ45空
+	    27,  11,17,11,17,16,25,11,17,11,17, 11,17, 46,66,11,17,11,17,11,17,16,25, 11,17, 11,17,135,165,11,17,11,17,16,25,11,17,11,17, 11,17, 46,66,11,17,11,17,11,17,16,25, 11,17, 11,17, 0xeb, //2017-08-02 lych DQ45重
+		31,  10,16,10,16,10,16,12,18,10,16,10,16,10,16,12,34,10,16,10,16,10,16,12,18,10,16,10,16,10,16,28,164,10,16,10,16,10,16,12,18,10,16,10,16,10,16,12,34,10,16,10,16,10,16,12,18,10,16,10,16,10,16, 0xed,
+		//;32轴货车2006-01-26 13 13 13 15 13 13 13 29 13 13 13 15 13 13 13 142 13 13 13 15 13 13 13 28 13 13 13 15 13 13 13  这是钳夹车 D38的一种，另两种是中档对应142的是154和33的
+		//钳夹车D35的不同之处是对应29处是16，中档是34的，这些放在下面一起
+//		5,   10,16, 10,16, 10,16, 10,16, 10,16, 0x96,							//	;特种货车  2017-03-17
+		9,   6,25, 6,25, 6,25, 6,25, 45,177, 6,25, 6,25, 6,25, 6,25, 0xee,			//	;多轴货车 // 2007-05-14 落孔下车 D17  可归到此处
+		11,  6,25, 6,25, 6,25, 6,25, 6,25, 45,177, 6,25, 6,25, 6,25, 6,25, 6,25, 0xef,//	;多轴货车 // 2007-05-14 凹底平车 D7 落孔下车 D17进口 可归到此处
+		5,   8,16, 8,16, 19,27, 8,16, 8,16, 0x97,								//	;多轴货车;应为机车
+		7,   8,16, 8,16, 8,16, 16,24, 8,16, 8,16, 8,16, 0xe2,						//  ;应为机车
+		7,   20,29, 70,112, 8,15, 8,15, 8,15, 12,25, 20,29, 0xac,					//  ;实验车// 2002-4-29 上海局
+		7,   20,29, 12,25, 8,15, 8,15, 8,15, 70,112, 20,29, 0xad,					//  ;实验车// 2002-4-29 上海局
+		7,   15,21, 13,19, 15,21, 42,141, 15,21, 13,19, 15,21, 0xf2,				//	;此8轴与实验车匹配
+		7,   14,20, 9,15, 14,20, 42,141, 14,20, 9,15, 14,20, 0xf2,				//	;此8轴与实验车匹配
+		7,   6,25, 6,25, 6,25, 45,177, 6,25, 6,25, 6,25, 0xe3,					//	;此8轴与实验车匹配 //0x91原车型未改
+		15,  10,16, 11,17, 10,16, 11,17, 10,16, 11,17, 10,16, 115,127, 10,16, 10,16, 11,17, 10,16, 11,17, 10,16, 11,17, 0xf5,//	;特种货?//?9-3-16
+		//4,   13,22,13,22,76,90,13,22, 0x5,			//	;前进   //济南 2000-01-16
+		//4,   13,22,76,90,13,22,13,22, 0x5,			//	;前进   //济南 2000-01-16 del 2009/12/24 cm
+		8,   10,15, 10,15, 10,15, 10,15, 130,197, 15,20, 8,20, 15,20, 0xf3,//其他货车 TJ165A add: 2009/03/02  cm
+		8,   10,16, 10,16, 10,16, 10,16, 130,170, 14,22, 7,13, 14,22, 0xf4, //add 2014/06/23 昆明增加 1300	1250	1250	1300	14825	1750	1000	1750
+		8,   14,22, 7,13, 14,22, 130,170, 10,16, 10,16, 10,16, 10,16, 0xf4, //add 2014/06/23 同上 反向
+
+		7,   10,15, 16,22, 10,15, 160,202, 15,20,  8,14, 15,20, 0xe4,		//其他货车 TJ130B add: 2009/03/02  cm
+		7,   15,20,  8,14, 15,20, 160,202, 10,15, 16,22, 10,15, 0xe4,		//上车反向
+
+		5,   14,20, 14,20, 143,156, 14,20, 14,20, 0x80,	//	;特种客车    温家宝专列// 0x11 0x11 0x97 0x11 0x11  ;99-09-14
+		15,  12,17, 12,17, 12,17, 12,17, 12,17, 12,17, 12,17, 80,152, 12,17, 12,17, 12,17, 12,17, 12,17, 12,17, 12,17, 0xf6,//	;郑州局月山	2000-2-22
+		3,   14,20,  9,17, 14,20, 0x84,//   ;特种货车//diao che
+		3,   15,19, 29,34, 15,19, 0x81,		//	 ;N15 四轴货车 add: 2009/03/02  cm 2012/07/11 和C100轴距重叠 18,31,18,31,18 将其移动都轴距库尾部 edit 2013/03/14 cm
+		5,   60,70, 13,23, 13,23, 85,115, 13,23, 0xe5,	//昆明提供特种车 6轴 6520	1800	1820	10083	1800
+		5,   13,23, 85,115, 13,23, 13,23, 60,70, 0xe5,	//昆明提供特种车 6轴 同上反向 add 2014/06/23'
+
+		15,  11,21, 10,18, 11,21, 26,34, 11,21, 10,18, 11,21, 100,133, 11,21, 10,18, 11,21, 26,34, 11,21, 10,18, 11,21, 0xf6,//	;add 2014/06/23  cm 郑州D26B 16轴 16.5 13.5 16.5	30 16.5	13.5 16.5 116.5 16.5 13.5 16.5	30 16.5 13.5 16.5
+		3,   15,21, 170,200, 15,21, 0x82,    //2017-01-03 加jxq6轴距
+		7,   15,21, 160,200, 15,21, 160,200, 15,21, 160,200, 15,21, 0x82,   //20181210  加Q8轴距
+//1,   36,46, 0x20,							//  ;轨道车 //ji che98.9.21 del 2011/05/26 cm 防止误干扰
+		0xfe };
+
+
+                for (i = 0; i < Axle_distance_table_temp.Length; i++)
+                    Axle_distance_table[i] = (byte)Axle_distance_table_temp[i];
+                /*
+                   try
+                   {
+                       FileStream myfile = File.Open("c:\\zjjudge.dat", FileMode.Create);
+                       myfile.Write(Axle_distance_table, (int)0, 2048);
+                       myfile.Close();
+                   }
+                   catch { }
+                 */
+            }
+
+            private unsafe uint match(byte* romp2, byte* p1)
+            {
+                uint i, m1 = 0;
+                byte* rp2;
+                rp2 = romp2;
+                for (i = 0; i < *(romp2); i++)
+                {
+                    if (*(rp2 + i * 2 + 1) < (*(p1 + i)) && ((*(rp2 + i * 2 + 2)) > (*(p1 + i))))
+                    {
+                        m1++;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+                }
+                if (*(p1 + (*rp2)) == 0xff)
+                {
+                    return m1;
+                };
+                if ((*(p1 + (*rp2)) > 0x45) || *(p1 + (*rp2)) < 0x10)//wzh modify at 2003-9-5   13-0f
+                {
+                    return 0;
+                }
+                else return m1;
+            }
+
+            private unsafe int check(byte* pp3)
+            {
+                byte* pp2;
+                byte flag = 0;
+
+                fixed (byte* pp1 = Axle_distance_table)
+                {
+                    pp2 = pp1;
+                    while (*pp2 != 0xfe)
+                    {
+                        if (match(pp2, pp3) != 0)
+                        {
+                            flag = 1; break;
+                        }
+                        else pp2 = pp2 + (*pp2) * 2 + 2;
+                    }
+                }
+                if (flag == 0) return 0;
+                else return 1;
+            }
+
+            public unsafe int make_car_table()
+            {
+                byte* p1;
+                byte* p2;
+                byte* romp2;
+                byte* romp1;
+                int i, j, offset;
+                int matchflag = 0;
+                int checksum = 3;
+                byte conum = 0;
+
+                carsum1 = 0;
+                carsum = 0;
+                uint axlenum;
+                ushort nomatchaxle = 0;
+
+                fixed (byte* ppp1 = Axle_distance_table)
+                {
+                    romp1 = ppp1;
+                }
+                fixed (byte* ppp2 = distance)
+                {
+                    p1 = ppp2;
+                }       //轴距表地址
+                if (*(p1) == 0xff) return 0;
+                romp2 = romp1;
+
+                try
+                {
+                    while (true)
+                    {
+                        carsum1 = carsum;
+                        while (*romp2 != 0xfe)
+                        {
+                            axlenum = match(romp2, p1);
+                            if (axlenum != 0)//matched
+                            {
+                                if (conum != 0)
+                                {
+                                    CTPtr[carsum].CarType = 0xdd;       //特种车类型
+                                    if (carsum == 0) CTPtr[carsum].CarType = 0x79;//特种车类型
+                                    CTPtr[carsum].BearTypeAxle = conum;
+                                    carsum++;
+                                    matchflag = 1;
+                                    conum = 0;
+                                }
+                                CTPtr[carsum].CarType = *(romp2 + (*romp2) * 2 + 1);
+                                if (CTPtr[carsum].CarType != 0x20) matchflag = 0;
+                                CTPtr[carsum].BearTypeAxle = (byte)(axlenum + 1);
+                                carsum++;
+                                if (matchflag != 0)
+                                {
+                                    if (*(p1 + *(romp2)) != 0xff)
+                                    {
+                                        checksum = check(p1 + *(romp2));
+                                        if (checksum != 0)
+                                        {
+                                            p1 = p1 + *(romp2);
+                                            CTPtr[carsum - 2].BearTypeAxle += 1;
+                                            carsum--;    //99-5-15
+                                        }
+                                        else p1 = p1 + *(romp2) + 1;
+                                    }
+                                    else p1 = p1 + *(romp2) + 1;
+                                    matchflag = 0;
+                                }
+                                else
+                                    p1 = p1 + *(romp2) + 1;
+                                //	romp1=Axle_distance_table;
+                                romp2 = romp1;
+                                conum = 0;
+                                break;
+                            }
+                            else
+                            {
+                                romp2 = romp2 + (*romp2) * 2 + 2;
+                            };
+                        };
+                        if (carsum == carsum1)
+                        {
+                            if (conum == 0) p2 = p1;
+                            conum++;
+                            if (conum >= 4)
+                            {
+                                CTPtr[carsum].CarType = 0xdd;//特种车类型
+                                if (carsum == 0) CTPtr[carsum].CarType = 0x79;
+                                CTPtr[carsum].BearTypeAxle = conum;
+                                carsum++;
+                                conum = 0;
+                            }
+                            p1 = p1 + 1;
+                            nomatchaxle++;
+                        }
+                        romp2 = romp1;
+                        if (*p1 < 8) break;
+                        if (*(p1 - 1) == 0xff) break;
+                    }
+                }
+                catch { };
+
+                if (conum != 0)
+                {
+                    CTPtr[carsum].CarType = 0xdd;		//特种车类型
+                    if (carsum == 0) CTPtr[carsum].CarType = 0x79;
+                    CTPtr[carsum].BearTypeAxle = conum;
+                    carsum++;
+                    conum = 0;
+                }
+                missaxle = nomatchaxle;
+                if (carsum == 0) return 0;
+                else
+                {
+                    offset = 0;
+                    for (i = 0; i < carsum; i++)
+                    {
+                        CTPtr[i].AxleAddr = (UInt16)offset;
+                        for (j = 0; j < CTPtr[i].BearTypeAxle; j++)
+                        {
+                            CTPtr[i].distance[j] = distance[offset + j];
+                        }
+                        offset += CTPtr[i].BearTypeAxle;
+                    }
+
+                    return 1;
+                }
+
+            }
+        }
+
+
 
 
         public struct TempRuleInfo
@@ -199,7 +765,7 @@ namespace PreviewDemo
             uiNavBar1.SetNodePageIndex(uiNavBar1.Nodes[0], pageIndex);//设置显示的初始界面为实时监控界面
 
             pageIndex++;
-            uiNavBar1.Nodes.Add("过车数据");
+            uiNavBar1.Nodes.Add("数据查询");
             uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[1], 362008);
 
             fVehicleData = new FormVehicleData();
@@ -215,17 +781,18 @@ namespace PreviewDemo
             //AddPage(fbrowse, pageIndex);
             //uiNavBar1.SetNodePageIndex(uiNavBar1.Nodes[1], pageIndex);
 
-            pageIndex++;
-            uiNavBar1.Nodes.Add("报警数据");
-            uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[2], 62151);
-            fAlarmData = new FAlarmData();
-            AddPage(fAlarmData, pageIndex);
-            uiNavBar1.SetNodePageIndex(uiNavBar1.Nodes[2], pageIndex);
+            //pageIndex++;
+            //uiNavBar1.Nodes.Add("报警数据");
+            //uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[2], 62151);
+            //fAlarmData = new FAlarmData();
+            //AddPage(fAlarmData, pageIndex);
+            //uiNavBar1.SetNodePageIndex(uiNavBar1.Nodes[2], pageIndex);
 
 
-            uiNavBar1.Nodes.Add("系统设置");
-            uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[3], 61459);
+            //uiNavBar1.Nodes.Add("系统设置");
+            //uiNavBar1.SetNodeSymbol(uiNavBar1.Nodes[3], 61459);
 
+            uiNavBar1.SelectedIndex = 0;
             //初始化数据
             initDatas();
 
@@ -249,18 +816,21 @@ namespace PreviewDemo
             //    trainListView.Height = Screen.PrimaryScreen.Bounds.Height - pics[2].Bottom;
             //}
 
-
+            info = (UILabel)fmonitor.GetControl("uiLabel1"); 
             //获取Fmonitor界面开始采集按钮，并添加相关事件
             startPrewviewBtn = (UISymbolButton)fmonitor.GetControl("startPrewviewBtn");
             startPrewviewBtn.Click += new EventHandler(StartPrewviewBtn_Click);
             startPrewviewBtn.MouseHover += new EventHandler(StartPrewviewBtn_MouseHover);
             startPrewviewBtn.MouseLeave += new EventHandler(StartPrewviewBtn_MouseLeave);
+            //startPrewviewBtn.Visible = false;
 
             //获取Fmonitor界面停止按钮，并添加相关事件
             stopPrewviewBtn = (UISymbolButton)fmonitor.GetControl("stopPrewviewBtn");
             stopPrewviewBtn.Click += new EventHandler(StopPrewviewBtn_Click);
             stopPrewviewBtn.MouseHover += new EventHandler(StopPrewviewBtn_MouseHover);
             stopPrewviewBtn.MouseLeave += new EventHandler(StopPrewviewBtn_MouseLeave);
+            //stopPrewviewBtn.Visible = false;
+
 
             //获取Fmonitor界面开始录制视频按钮，并添加相关事件
             startRecordBtn = (UISymbolButton)fmonitor.GetControl("startRecordBtn");
@@ -279,6 +849,7 @@ namespace PreviewDemo
             mouseFollowBtn.Click += new EventHandler(mouseFollowBtn_Click);
             mouseFollowBtn.MouseHover += new EventHandler(mouseFollowBtn_MouseHover);
             mouseFollowBtn.MouseLeave += new EventHandler(mouseFollowBtn_MouseLeave);
+            //mouseFollowBtn.Visible = false;
 
             //获取Fmoitor界面拍照按钮，并添加相关事件
             takePicBtn = (UISymbolButton)fmonitor.GetControl("takePicBtn");
@@ -286,23 +857,27 @@ namespace PreviewDemo
             takePicBtn.MouseHover += new EventHandler(takePicBtn_MouseHover);
             takePicBtn.MouseLeave += new EventHandler(takePicBtn_MouseLeave);
 
+
             //获取Fmoitor界面画矩形按钮，并添加相关事件
             drawRectBtn = (UISymbolButton)fmonitor.GetControl("drawRectBtn");
             drawRectBtn.Click += new EventHandler(drawRectBtn_Click);
             drawRectBtn.MouseHover += new EventHandler(drawRectBtn_MouseHover);
             drawRectBtn.MouseLeave += new EventHandler(drawRectBtn_MouseLeave);
+            //drawRectBtn.Visible = false;
 
             //获取Fmoitor界面画圆形按钮，并添加相关事件
             drawCircleBtn = (UISymbolButton)fmonitor.GetControl("drawCircleBtn");
             drawCircleBtn.Click += new EventHandler(drawCircleBtn_Click);
             drawCircleBtn.MouseHover += new EventHandler(drawCircleBtn_MouseHover);
             drawCircleBtn.MouseLeave += new EventHandler(drawCircleBtn_MouseLeave);
+            //drawCircleBtn.Visible = false;
 
             //获取Fmoitor界面删除所有选区按钮，并添加相关事件
             deleteAllDrawBtn = (UISymbolButton)fmonitor.GetControl("deleteAllDrawBtn");
             deleteAllDrawBtn.Click += new EventHandler(deleteAllDrawBtn_Click);
             deleteAllDrawBtn.MouseHover += new EventHandler(deleteAllDrawBtn_MouseHover);
             deleteAllDrawBtn.MouseLeave += new EventHandler(deleteAllDrawBtn_MouseLeave);
+            //deleteAllDrawBtn.Visible = false;
 
             //为按钮添加提示信息
             uiToolTip1.SetToolTip(startPrewviewBtn, "开始采集");
@@ -337,10 +912,40 @@ namespace PreviewDemo
             SaveOPImageThread.IsBackground = true;
             SaveOPImageThread.Start();
 
+            //监测来车事件线程
+            MonitorTrainComingThread = new Thread(MoitorTrainComing);
+            MonitorTrainComingThread.IsBackground = true;
+            MonitorTrainComingThread.Start();
+
+            //监测过车事件线程
+            MonitorTrainLeaveThread = new Thread(MoitorTrainLeave);
+            MonitorTrainLeaveThread.IsBackground = true;
+            MonitorTrainLeaveThread.Start();
+
 
             Thread.Sleep(100);
 
 
+        }
+
+        private void MoitorTrainLeave()
+        {
+            while (true)
+            {
+                trainLeaveEvent.WaitOne();
+                StopRecord();
+                Thread.Sleep(5);
+            }
+        }
+
+        private void MoitorTrainComing()
+        {
+            while (true)
+            {
+                trainComingEvent.WaitOne();
+                StartRecording();
+                Thread.Sleep(5);
+            }
         }
 
         /// <summary>
@@ -472,6 +1077,7 @@ namespace PreviewDemo
                                 List<int> maxTempList = new List<int>();
                                 for (int i = 0; i < cacheData.Length; i++)
                                 {
+                                    //Console.WriteLine("maxTempListitem_" + i +  BitConverter.ToInt32(cacheData[i].GetRange(0, 4).ToArray(), 0));
                                     maxTempList.Add(BitConverter.ToInt32(cacheData[i].GetRange(0, 4).ToArray(), 0));
                                 }
 
@@ -479,21 +1085,30 @@ namespace PreviewDemo
                                 int min = maxTempList.Min();
                                 int minIndex = maxTempList.IndexOf(min);
 
+                                //Console.WriteLine("maxTemp" + maxTemp*10);
+                                //Console.WriteLine("min" + min);
+                                //Console.WriteLine("minIndex" + minIndex);
+
                                 //如果当前温度最大值>集合中最小温度值，则将其替换
-                                if(maxTemp > min)
+                                if (maxTemp*10 > min)
                                 {
                                     cacheData[minIndex].Clear();
                                     index = minIndex;
                                     byte[] t = new byte[4];
-                                    t = BitConverter.GetBytes((maxTemp * 10));
+                                    t = BitConverter.GetBytes((int)(maxTemp * 10));
+
 
                                     cacheData[index].AddRange(t);//添加最高温*10转换成字节数组，4个字节
                                     cacheData[index].AddRange(dateTimeNowBytes);//添加当前时间戳8个字节
 
-                                    for (int i = 0; i < 2; i++)//2个预留字节
-                                    {
-                                        cacheData[index].Add(0x00);
-                                    }
+                                    byte[] a = new byte[2];
+                                    //Console.WriteLine("轴序" + m_AxleCount);
+                                    a = BitConverter.GetBytes(m_AxleCount);
+                                    cacheData[index].AddRange(a);//添加轴数，2个字节
+                                    //for (int i = 0; i < 2; i++)//2个预留字节
+                                    //{
+                                    //    cacheData[index].Add(0x00);
+                                    //}
 
                                     cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwJpegPicLen));//添加红外图像长度，4个字节
                                     cacheData[index].AddRange(IRImageArray);//添加红外图像数据
@@ -507,15 +1122,24 @@ namespace PreviewDemo
                             {
                                 index = cacheDataCount;
                                 byte[] t = new byte[4];
-                                t = BitConverter.GetBytes((maxTemp * 10));//最高温乘以10，转换为字节数组
+                                //Console.WriteLine("maxTemp" + maxTemp);
+                                t = BitConverter.GetBytes((int)(maxTemp * 10));//最高温乘以10，转换为字节数组
+
+                                //int bb = BitConverter.ToInt32(t, 0);
+                                //Console.WriteLine("bb" + bb);
+
 
                                 cacheData[index].AddRange(t);//添加最高温*10转换成字节数组，4个字节
                                 cacheData[index].AddRange(dateTimeNowBytes);//添加当前时间戳8个字节
 
-                                for (int i = 0; i < 2; i++)//10个预留字节
-                                {
-                                    cacheData[index].Add(0x00);
-                                }
+                                //Console.WriteLine("轴序" + m_AxleCount);
+                                byte[] a = new byte[2];
+                                a = BitConverter.GetBytes(m_AxleCount);
+                                cacheData[index].AddRange(a);//添加轴数，2个字节
+                                //for (int i = 0; i < 2; i++)//10个预留字节
+                                //{
+                                //    cacheData[index].Add(0x00);
+                                //}
 
                                 cacheData[index].AddRange(BitConverter.GetBytes(struJpegWithAppendData.dwJpegPicLen));//添加红外图像长度，4个字节
                                 cacheData[index].AddRange(IRImageArray);//添加红外图像数据
@@ -612,6 +1236,7 @@ namespace PreviewDemo
         /// </summary>
         private void AnalysisData()
         {
+          
             for (int i = 0; i < cacheData.Length; i++)
             {
                 if (cacheData[i].Count > 0)
@@ -625,6 +1250,37 @@ namespace PreviewDemo
                     DateTime aa = TicksTimeConvert.Ticks132LocalTime(time);  //时间戳转本地时间
 
                     short axelNum = BitConverter.ToInt16(cacheData[i].GetRange(12, 2).ToArray(), 0);//获取轴序
+                    //Console.WriteLine("获取的轴序" + axelNum);
+                    int carLocation = 0;
+                    int locomotiveCount = 0; 
+
+                    //定位第几辆车
+                    for (int j = 0; j < m_CarSum; j++)
+                    {
+                        if (mCarTableDel.CTPtr[j].CarType < 0x80)//统计机车数量
+                        {
+                            locomotiveCount += 1;
+                        }
+                        if (j < m_CarSum - 1)
+                        {
+                            if (axelNum >= mCarTableDel.CTPtr[j].AxleAddr && axelNum < mCarTableDel.CTPtr[j + 1].AxleAddr)
+                            {
+                                carLocation = j + 1;
+                            }
+                        }
+                        else
+                        {
+                            if (axelNum >= mCarTableDel.CTPtr[j].AxleAddr)
+                            {
+                                carLocation = j + 1;
+                            }
+                        }
+
+                    }
+
+
+                    carLocation = carLocation - locomotiveCount + 1;
+                    //Console.WriteLine("carLocation" + carLocation);
 
                     string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");//格式化本地时间
 
@@ -643,8 +1299,9 @@ namespace PreviewDemo
                     RectangleF rectF = GetRectArea(maxTempX, maxTempY, 5, 5);//选择最高温度点周围10*10的区域
                     float[] result = getTempAtRect(temp, rectF, IR_IMAGE_WIDTH);//获取该区域的最值、平均值 result[2] 为平均值
 
-                    string irImagePath = saveReportPath[0] + "\\" + strTime + "_IR_" + i + ".jpeg";//红外图像文件名
-                    string tempDataPath = saveReportPath[0] + "\\" + strTime + "_temp_" + i + ".dat";//温度数据文件名
+                    string irImagePath = saveReportPath[0] + "\\" + strTime + "_IR_" + carLocation + ".jpeg";//红外图像文件名
+                    string tempDataPath = saveReportPath[0] + "\\" + strTime + "_temp_" + carLocation + ".dat";//温度数据文件名
+
 
                     WriteBytesToFile(irImagePath, cacheData[i].GetRange(4 + 8 + 2 + 4, IRImageLength).ToArray(), IRImageLength);//保存红外图像
                     WriteBytesToFile(tempDataPath, IRTempArray, tempDataLength);//保存温度数据
@@ -658,8 +1315,8 @@ namespace PreviewDemo
                         {
                             Directory.CreateDirectory(alarmReportPath[0]);
                         }
-                        string alarmDataPath = alarmReportPath[0] + "\\" + strTime + "_temp_" + i + ".dat";//温度数据文件名
-                        string alarmIrImagePath = alarmReportPath[0] + "\\" + strTime + "_IR_" + i + ".jpeg";//红外图像文件名
+                        string alarmDataPath = alarmReportPath[0] + "\\" + strTime + "_temp_" + carLocation + ".dat";//温度数据文件名
+                        string alarmIrImagePath = alarmReportPath[0] + "\\" + strTime + "_IR_" + carLocation + ".jpeg";//红外图像文件名
 
                         WriteBytesToFile(alarmIrImagePath, cacheData[i].GetRange(4 + 8 + 2 + 4, IRImageLength).ToArray(), IRImageLength);//保存红外图像
                         WriteBytesToFile(alarmDataPath, IRTempArray, tempDataLength);//保存温度数据
@@ -694,7 +1351,7 @@ namespace PreviewDemo
             TrainIndex trainIndex = new TrainIndex();
             if (isAlarm[0])
             {
-                trainIndex.isAlarm = "是";              
+                trainIndex.isAlarm = "是";
             }
             else
             {
@@ -717,7 +1374,7 @@ namespace PreviewDemo
             {
                 item.ForeColor = Color.Red;
             }
-          
+
             trainListView.Items.Add(item);
 
 
@@ -748,6 +1405,27 @@ namespace PreviewDemo
             //        }
             //    }
             //}
+
+
+
+            string trainInfoXmlFilePath = trainInfoReportPath[0] + "\\" + splitPath[6] + ".xml";
+            TrainListInfo trainListInfo = new TrainListInfo();
+            for (uint k = 0; k < m_CarSum; k++)
+            {
+                TrainInfo trainInfo = new TrainInfo();
+                trainInfo.indexID = k + 1;
+                trainInfo.carType = mCarTableDel.CTPtr[k].CarType;
+                trainInfo.bearTypeAxle = mCarTableDel.CTPtr[k].BearTypeAxle;
+                trainInfo.axleDistance = mCarTableDel.CTPtr[k].distance;
+                trainInfo.axleAddr = mCarTableDel.CTPtr[k].AxleAddr;
+                trainListInfo.trainIndexList.Add(trainInfo);
+               
+            }
+
+            trainListInfo.axleSpeed = axleSpeedTable;
+            Globals.WriteInfoXml<TrainListInfo>(trainListInfo, trainInfoXmlFilePath);//将过车数据写入索引文件
+
+           
 
         }
 
@@ -1283,44 +1961,7 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StopRecordBtn_Click(object sender, EventArgs e)
         {
-            isTrainStart = false;
-            SetButtonImg(startRecordBtn, "开始录制-line.png");
-            Thread.Sleep(100);
-            ////停止录像 Stop recording
-            //if (!CHCNetSDK.NET_DVR_StopSaveRealData(mRealHandles[0]))
-            //{
-            //    iLastErr = CHCNetSDK.NET_DVR_GetLastError();
-            //    str = "NET_DVR_StopSaveRealData failed, error code= " + iLastErr;
-            //    MessageBox.Show(str);
-            //    return;
-            //}
-            //else
-            //{
-            //    str = "NET_DVR_StopSaveRealData succ and the saved file is " + sVideoFileName;
-            //    MessageBox.Show(str);
-            //    m_bRecord = false;
-            //}
-
-            while (true)
-            {
-                //等待过车数据缓存完成后开始进行数据分析及存盘
-                if (!isSavingIrImg)
-                {
-
-                    AnalysisData();
-
-                    for (int i = 0; i < 20; i++)
-                    {
-                        cacheData[i].Clear();
-                    }
-
-                    cacheDataCount = 0;
-                    isCopyOpImage[0] = false;
-                    break;
-                }
-                Thread.Sleep(5);
-            }
-
+            StopRecord();
         }
 
         /// <summary>
@@ -1414,30 +2055,7 @@ namespace PreviewDemo
         /// <param name="e"></param>
         private void StartRecordBtn_Click(object sender, EventArgs e)
         {
-            //Stopwatch stopwatch = new Stopwatch();
-            //stopwatch.Start();
-
-            //获取当前时间戳
-            long dateTimeNow = TicksTimeConvert.GetNowTicks13();
-            DateTime aa = TicksTimeConvert.Ticks132LocalTime(dateTimeNow);  //时间戳转本地时间
-
-
-            saveReportPath[0] = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + aa.ToString("yyyy_MM_dd");
-            alarmReportPath[0] = Globals.RootSavePath + "\\" + "AlarmReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + aa.ToString("yyyy_MM_dd");
-            string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");
-            saveReportPath[0] += "\\" + strTime;
-
-            alarmReportPath[0] += "\\" + strTime;
-
-            //判断文件夹是否存在，如果不存在，新建文件夹
-            if (!Directory.Exists(saveReportPath[0]))
-            {
-                Directory.CreateDirectory(saveReportPath[0]);
-            }
-
-            isTrainStart = true;
-            SetButtonImg(startRecordBtn, "开始录制-line(1).png");
-
+            StartRecording();
         }
 
         /// <summary>
@@ -1505,9 +2123,42 @@ namespace PreviewDemo
 
 
 
-        private void StartPrewview()
+        private void StartRecording()
         {
+            //Stopwatch stopwatch = new Stopwatch();
+            //stopwatch.Start();
 
+            //获取当前时间戳
+            long dateTimeNow = TicksTimeConvert.GetNowTicks13();
+            DateTime aa = TicksTimeConvert.Ticks132LocalTime(dateTimeNow);  //时间戳转本地时间
+
+
+            saveReportPath[0] = Globals.RootSavePath + "\\" + "SaveReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + aa.ToString("yyyy_MM_dd");
+            alarmReportPath[0] = Globals.RootSavePath + "\\" + "AlarmReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + aa.ToString("yyyy_MM_dd");
+            trainInfoReportPath[0] = Globals.RootSavePath + "\\" + "TrainInfoReport" + "\\" + Globals.systemParam.stationName + "\\" + Globals.systemParam.deviceName_0 + "\\" + aa.ToString("yyyy_MM_dd");
+
+            string strTime = aa.ToString("yyyyMMdd_HHmmss_fff");
+            saveReportPath[0] += "\\" + strTime;
+
+            alarmReportPath[0] += "\\" + strTime;
+
+            //判断文件夹是否存在，如果不存在，新建文件夹
+            if (!Directory.Exists(saveReportPath[0]))
+            {
+                Directory.CreateDirectory(saveReportPath[0]);
+            }
+
+            //判断文件夹是否存在，如果不存在，新建文件夹
+            if (!Directory.Exists(trainInfoReportPath[0]))
+            {
+                Directory.CreateDirectory(trainInfoReportPath[0]);
+            }
+
+            isTrainStart = true;
+            SetButtonImg(startRecordBtn, "开始录制-line(1).png");
+
+            info.Text = "当日过车信息：正在过车";
+            info.ForeColor = Color.FromArgb(128, 128, 255);
 
         }
 
@@ -1520,8 +2171,48 @@ namespace PreviewDemo
         /// <summary>
         /// 停止采集预览
         /// </summary>
-        private void StopPrewview()
+        private void StopRecord()
         {
+            isTrainStart = false;
+            SetButtonImg(startRecordBtn, "开始录制-line.png");
+            Thread.Sleep(100);
+            ////停止录像 Stop recording
+            //if (!CHCNetSDK.NET_DVR_StopSaveRealData(mRealHandles[0]))
+            //{
+            //    iLastErr = CHCNetSDK.NET_DVR_GetLastError();
+            //    str = "NET_DVR_StopSaveRealData failed, error code= " + iLastErr;
+            //    MessageBox.Show(str);
+            //    return;
+            //}
+            //else
+            //{
+            //    str = "NET_DVR_StopSaveRealData succ and the saved file is " + sVideoFileName;
+            //    MessageBox.Show(str);
+            //    m_bRecord = false;
+            //}
+
+            while (true)
+            {
+                //等待过车数据缓存完成后开始进行数据分析及存盘
+                if (!isSavingIrImg)
+                {
+
+                    AnalysisData();
+
+                    for (int i = 0; i < 20; i++)
+                    {
+                        cacheData[i].Clear();
+                    }
+
+                    cacheDataCount = 0;
+                    isCopyOpImage[0] = false;
+                    break;
+                }
+                Thread.Sleep(5);
+            }
+
+            info.Text = "当日过车信息";
+            info.ForeColor = Color.FromArgb(224, 224, 224);
 
         }
 
@@ -1661,20 +2352,20 @@ namespace PreviewDemo
 
                 ColumnHeader columnHeader = new ColumnHeader();
                 columnHeader.Text = "序号";
-                columnHeader.Width = trainListView.Width * 1 / 5;
+                columnHeader.Width = trainListView.Width * 2/ 10;
                 columnHeader.TextAlign = HorizontalAlignment.Center;
                 trainListView.Columns.Add(columnHeader);
 
                 ColumnHeader columnHeader1 = new ColumnHeader();
                 columnHeader1.Text = "过车时间";
-                columnHeader1.Width = trainListView.Width * 2 / 5;
+                columnHeader1.Width = trainListView.Width * 4/ 10;
                 columnHeader1.TextAlign = HorizontalAlignment.Center;
                 trainListView.Columns.Add(columnHeader1);
 
 
                 ColumnHeader columnHeader2 = new ColumnHeader();
                 columnHeader2.Text = "是否报警";
-                columnHeader2.Width = trainListView.Width * 2 / 5;
+                columnHeader2.Width = trainListView.Width * 5/ 13;
                 columnHeader2.TextAlign = HorizontalAlignment.Center;
                 trainListView.Columns.Add(columnHeader2);
                 trainListView.FullRowSelect = true;
@@ -1742,6 +2433,25 @@ namespace PreviewDemo
                     indexList = new IndexListInfo();
                 }
             }
+
+            QueryPerformanceFrequency(ref m_lgTCPU);		//CPU hz  
+            dealTrainThread = new Thread(new ThreadStart(DealTrain));
+            dealTrainThread.Priority = ThreadPriority.AboveNormal;// .Highest;
+
+            try
+            {
+                serialPort1.ReceivedBytesThreshold = 1;
+                serialPort1.Open();
+                serialPort1.DiscardInBuffer();
+                serialPort1.DiscardOutBuffer();
+                dealTrainThread.Start();
+
+            }
+            catch
+            {
+                MessageBox.Show(" Cannot open serial port！");
+            }
+
 
         }
 
@@ -1845,9 +2555,13 @@ namespace PreviewDemo
 
         private void UiNavBar1_MenuItemClick(string itemText, int menuIndex, int pageIndex)
         {
+           if(pageIndex == PAGE_INDEX)
+            {
+                //FormVehicleData.selectType = -1;
+                //PictureBox pic = (PictureBox)fmonitor.GetControl("pics[0]");
+                //pic.Refresh();
 
-
-
+            }
         }
 
         /// <summary>
@@ -1891,6 +2605,9 @@ namespace PreviewDemo
 
                 saveReportPath.Add(null);
                 alarmReportPath.Add(null);
+
+                trainInfoReportPath.Add(null);
+                trainInfoReportPath.Add(null);
 
                 isAlarm.Add(false);
                 isCopyOpImage.Add(false);
@@ -1962,6 +2679,93 @@ namespace PreviewDemo
                     //登录成功
                     //MessageBox.Show("Login Success!");
                 }
+            }
+        }
+
+        private void SerialPort1_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
+        {
+            byte[] rece_buffer = new byte[0x100];
+            int i = 0;
+            try
+            {
+                int readbytes = serialPort1.Read(rece_buffer, 0, 0x12);
+
+                if (readbytes > 0)
+                {
+                    Array.Copy(rece_buffer, 0, data_buffer, data_count, readbytes);
+                    data_count += readbytes;
+                    if (data_count > 0x5000) { data_count = 0; deal_point = 0; }
+                    while (data_count > (deal_point + 5))
+                    {
+                        if (data_buffer[deal_point] == 0)
+                        {
+                            if (data_buffer[deal_point + 1] == 1)
+                            {
+                                /*
+                                     for (i = deal_point ; i < (deal_point+6); i++)
+                                     {
+                                         textBox1.Text +=    data_buffer[i].ToString();
+                                         textBox1.Text += " ";
+                                     }
+                                     textBox1.Text += "\r\n";  
+                                 */
+                                deal_point += 6;
+                                readN1Event.Set();
+                            }
+                            else if (data_buffer[deal_point + 1] == 2)
+                            {
+                                m_lgTemp2 = (UInt64)(data_buffer[deal_point + 2] * 0x1000000 + data_buffer[deal_point + 3] * 0x10000 + data_buffer[deal_point + 4] * 0x100 + data_buffer[deal_point + 5]);
+                                //  textBox1.Text += "2: " +  m_lgTemp2.ToString() ;
+                                //  textBox1.Text += " ";
+                                //  textBox1.Text += "\r\n";
+
+                                deal_point += 6;
+                                readN2Event.Set();
+                            }
+                            else if (data_buffer[deal_point + 1] == 3)
+                            {
+                                m_lgTemp3 = (UInt64)(data_buffer[deal_point + 2] * 0x1000000 + data_buffer[deal_point + 3] * 0x10000 + data_buffer[deal_point + 4] * 0x100 + data_buffer[deal_point + 5]);
+                                //textBox1.Text += "3: " + m_lgTemp3.ToString();
+                                //textBox1.Text += " ";
+                                ////
+                                deal_point += 6;
+                                readN3Event.Set();
+                            }
+                            else deal_point++;
+                        }
+                        else deal_point++;
+                    }
+                }
+                /*
+                  case 0x3:
+                     for (i = 0; i < 6; i++)
+                      {
+                          textBox1.Text += rece_buffer[i].ToString();
+                          textBox1.Text += " ";
+                      }
+                      textBox1.Text += "\r\n";
+                      break;
+                      // QueryPerformanceCounter(ref m_lgTemp3);
+                      m_lgTemp3 = (UInt64)(rece_buffer[4] + rece_buffer[3] * 0x100 + rece_buffer[2] * 0x10000 + rece_buffer[1]*0x1000000);
+                      textBox1.Text += "3:  " + m_lgTemp3.ToString() + " \r\n";
+                      //readN3Event.Set();
+                      break;
+                  */
+            }
+            catch { }
+        }
+
+        private void SerialPort1_ErrorReceived(object sender, System.IO.Ports.SerialErrorReceivedEventArgs e)
+        {
+            serialPort1.DiscardInBuffer();
+        }
+
+        private void Timer2_Tick(object sender, EventArgs e)
+        {
+            if (!kjFlag)
+            {
+                data_count = 0;
+                deal_point = 0;
             }
         }
 

@@ -28,26 +28,36 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormVehicleData));
             this.uiPanel1 = new Sunny.UI.UIPanel();
+            this.deleteAllDrawBtn = new Sunny.UI.UISymbolButton();
+            this.drawCircleBtn = new Sunny.UI.UISymbolButton();
+            this.drawRectBtn = new Sunny.UI.UISymbolButton();
+            this.mouseFollowBtn = new Sunny.UI.UISymbolButton();
+            this.line_Btn = new Sunny.UI.UISymbolButton();
             this.uiLabel4 = new Sunny.UI.UILabel();
             this.uiComboBox_DeviceName = new Sunny.UI.UIComboBox();
-            this.uiLabel3 = new Sunny.UI.UILabel();
-            this.uiDatePickerEnd = new Sunny.UI.UIDatePicker();
+            this.tipLable = new Sunny.UI.UILabel();
             this.uiButton_query = new Sunny.UI.UIButton();
             this.uiDatePickerStart = new Sunny.UI.UIDatePicker();
-            this.uiLabel2 = new Sunny.UI.UILabel();
             this.uiLabel1 = new Sunny.UI.UILabel();
+            this.uiDatePickerEnd = new Sunny.UI.UIDatePicker();
+            this.uiLabel2 = new Sunny.UI.UILabel();
             this.uiPanel2 = new Sunny.UI.UIPanel();
             this.listView_VehicleData = new System.Windows.Forms.ListView();
             this.uiPanel3 = new Sunny.UI.UIPanel();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.uiLabel5 = new Sunny.UI.UILabel();
             this.label2 = new System.Windows.Forms.Label();
             this.op_image_next_btn = new Sunny.UI.UIImageButton();
             this.op_image_preview_btn = new Sunny.UI.UIImageButton();
             this.label1 = new System.Windows.Forms.Label();
             this.ir_image_next_btn = new Sunny.UI.UIImageButton();
             this.ir_Image_preview_btn = new Sunny.UI.UIImageButton();
+            this.uiToolTip1 = new Sunny.UI.UIToolTip(this.components);
+            this.uiLabel3 = new Sunny.UI.UILabel();
+            this.uiComboBox_dataType = new Sunny.UI.UIComboBox();
             this.uiPanel1.SuspendLayout();
             this.uiPanel2.SuspendLayout();
             this.uiPanel3.SuspendLayout();
@@ -60,13 +70,18 @@
             // 
             // uiPanel1
             // 
+            this.uiPanel1.Controls.Add(this.uiComboBox_dataType);
+            this.uiPanel1.Controls.Add(this.uiLabel3);
+            this.uiPanel1.Controls.Add(this.deleteAllDrawBtn);
+            this.uiPanel1.Controls.Add(this.drawCircleBtn);
+            this.uiPanel1.Controls.Add(this.drawRectBtn);
+            this.uiPanel1.Controls.Add(this.mouseFollowBtn);
+            this.uiPanel1.Controls.Add(this.line_Btn);
             this.uiPanel1.Controls.Add(this.uiLabel4);
             this.uiPanel1.Controls.Add(this.uiComboBox_DeviceName);
-            this.uiPanel1.Controls.Add(this.uiLabel3);
-            this.uiPanel1.Controls.Add(this.uiDatePickerEnd);
+            this.uiPanel1.Controls.Add(this.tipLable);
             this.uiPanel1.Controls.Add(this.uiButton_query);
             this.uiPanel1.Controls.Add(this.uiDatePickerStart);
-            this.uiPanel1.Controls.Add(this.uiLabel2);
             this.uiPanel1.Controls.Add(this.uiLabel1);
             this.uiPanel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.uiPanel1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
@@ -78,10 +93,140 @@
             this.uiPanel1.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
             this.uiPanel1.RectColor = System.Drawing.Color.Transparent;
             this.uiPanel1.RectSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.None;
-            this.uiPanel1.Size = new System.Drawing.Size(1176, 49);
+            this.uiPanel1.Size = new System.Drawing.Size(1543, 49);
             this.uiPanel1.TabIndex = 0;
             this.uiPanel1.Text = null;
             this.uiPanel1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // deleteAllDrawBtn
+            // 
+            this.deleteAllDrawBtn.BackColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.deleteAllDrawBtn.FillColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.deleteAllDrawBtn.ForeColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.Image = ((System.Drawing.Image)(resources.GetObject("deleteAllDrawBtn.Image")));
+            this.deleteAllDrawBtn.LightColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.Location = new System.Drawing.Point(1242, 6);
+            this.deleteAllDrawBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
+            this.deleteAllDrawBtn.MinimumSize = new System.Drawing.Size(1, 1);
+            this.deleteAllDrawBtn.Name = "deleteAllDrawBtn";
+            this.deleteAllDrawBtn.RectColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.RectHoverColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.RectPressColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.RectSelectedColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.Size = new System.Drawing.Size(30, 35);
+            this.deleteAllDrawBtn.SymbolColor = System.Drawing.Color.Transparent;
+            this.deleteAllDrawBtn.TabIndex = 26;
+            this.deleteAllDrawBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.deleteAllDrawBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.deleteAllDrawBtn.TipsText = "停止采集";
+            this.deleteAllDrawBtn.Click += new System.EventHandler(this.DeleteAllDrawBtn_Click);
+            // 
+            // drawCircleBtn
+            // 
+            this.drawCircleBtn.BackColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.drawCircleBtn.FillColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.drawCircleBtn.ForeColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.Image = ((System.Drawing.Image)(resources.GetObject("drawCircleBtn.Image")));
+            this.drawCircleBtn.LightColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.Location = new System.Drawing.Point(1199, 6);
+            this.drawCircleBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
+            this.drawCircleBtn.MinimumSize = new System.Drawing.Size(1, 1);
+            this.drawCircleBtn.Name = "drawCircleBtn";
+            this.drawCircleBtn.RectColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.RectHoverColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.RectPressColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.RectSelectedColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.Size = new System.Drawing.Size(30, 35);
+            this.drawCircleBtn.SymbolColor = System.Drawing.Color.Transparent;
+            this.drawCircleBtn.TabIndex = 25;
+            this.drawCircleBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.drawCircleBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.drawCircleBtn.TipsText = "停止采集";
+            this.drawCircleBtn.Click += new System.EventHandler(this.DrawCircleBtn_Click);
+            this.drawCircleBtn.MouseLeave += new System.EventHandler(this.DrawCircleBtn_MouseLeave);
+            this.drawCircleBtn.MouseHover += new System.EventHandler(this.DrawCircleBtn_MouseHover);
+            // 
+            // drawRectBtn
+            // 
+            this.drawRectBtn.BackColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.drawRectBtn.FillColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.drawRectBtn.ForeColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.Image = ((System.Drawing.Image)(resources.GetObject("drawRectBtn.Image")));
+            this.drawRectBtn.LightColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.Location = new System.Drawing.Point(1156, 6);
+            this.drawRectBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
+            this.drawRectBtn.MinimumSize = new System.Drawing.Size(1, 1);
+            this.drawRectBtn.Name = "drawRectBtn";
+            this.drawRectBtn.RectColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.RectHoverColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.RectPressColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.RectSelectedColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.Size = new System.Drawing.Size(30, 35);
+            this.drawRectBtn.SymbolColor = System.Drawing.Color.Transparent;
+            this.drawRectBtn.TabIndex = 23;
+            this.drawRectBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.drawRectBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.drawRectBtn.TipsText = "停止采集";
+            this.drawRectBtn.Click += new System.EventHandler(this.DrawRectBtn_Click);
+            this.drawRectBtn.MouseLeave += new System.EventHandler(this.DrawRectBtn_MouseLeave);
+            this.drawRectBtn.MouseHover += new System.EventHandler(this.DrawRectBtn_MouseHover);
+            // 
+            // mouseFollowBtn
+            // 
+            this.mouseFollowBtn.BackColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.mouseFollowBtn.FillColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.mouseFollowBtn.ForeColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.Image = ((System.Drawing.Image)(resources.GetObject("mouseFollowBtn.Image")));
+            this.mouseFollowBtn.LightColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.Location = new System.Drawing.Point(1113, 8);
+            this.mouseFollowBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
+            this.mouseFollowBtn.MinimumSize = new System.Drawing.Size(1, 1);
+            this.mouseFollowBtn.Name = "mouseFollowBtn";
+            this.mouseFollowBtn.RectColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.RectHoverColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.RectPressColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.RectSelectedColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.Size = new System.Drawing.Size(30, 35);
+            this.mouseFollowBtn.SymbolColor = System.Drawing.Color.Transparent;
+            this.mouseFollowBtn.TabIndex = 24;
+            this.mouseFollowBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.mouseFollowBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.mouseFollowBtn.TipsText = "停止采集";
+            this.mouseFollowBtn.Click += new System.EventHandler(this.MouseFollowBtn_Click);
+            this.mouseFollowBtn.MouseLeave += new System.EventHandler(this.MouseFollowBtn_MouseLeave);
+            this.mouseFollowBtn.MouseHover += new System.EventHandler(this.MouseFollowBtn_MouseHover);
+            // 
+            // line_Btn
+            // 
+            this.line_Btn.BackColor = System.Drawing.Color.Transparent;
+            this.line_Btn.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.line_Btn.FillColor = System.Drawing.Color.Transparent;
+            this.line_Btn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.line_Btn.ForeColor = System.Drawing.Color.Transparent;
+            this.line_Btn.Image = ((System.Drawing.Image)(resources.GetObject("line_Btn.Image")));
+            this.line_Btn.LightColor = System.Drawing.Color.Transparent;
+            this.line_Btn.Location = new System.Drawing.Point(1075, 6);
+            this.line_Btn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
+            this.line_Btn.MinimumSize = new System.Drawing.Size(1, 1);
+            this.line_Btn.Name = "line_Btn";
+            this.line_Btn.RectColor = System.Drawing.Color.Transparent;
+            this.line_Btn.RectHoverColor = System.Drawing.Color.Transparent;
+            this.line_Btn.RectPressColor = System.Drawing.Color.Transparent;
+            this.line_Btn.RectSelectedColor = System.Drawing.Color.Transparent;
+            this.line_Btn.Size = new System.Drawing.Size(15, 35);
+            this.line_Btn.SymbolColor = System.Drawing.Color.Transparent;
+            this.line_Btn.TabIndex = 22;
+            this.line_Btn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.line_Btn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.line_Btn.TipsText = "停止采集";
             // 
             // uiLabel4
             // 
@@ -115,42 +260,18 @@
             this.uiComboBox_DeviceName.TabIndex = 8;
             this.uiComboBox_DeviceName.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
             this.uiComboBox_DeviceName.Watermark = "";
+            this.uiComboBox_DeviceName.SelectedIndexChanged += new System.EventHandler(this.UiComboBox_DeviceName_SelectedIndexChanged);
             // 
-            // uiLabel3
+            // tipLable
             // 
-            this.uiLabel3.BackColor = System.Drawing.Color.Transparent;
-            this.uiLabel3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiLabel3.ForeColor = System.Drawing.Color.Red;
-            this.uiLabel3.Location = new System.Drawing.Point(696, 11);
-            this.uiLabel3.Name = "uiLabel3";
-            this.uiLabel3.Size = new System.Drawing.Size(123, 23);
-            this.uiLabel3.TabIndex = 7;
-            this.uiLabel3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // uiDatePickerEnd
-            // 
-            this.uiDatePickerEnd.BackColor = System.Drawing.Color.Transparent;
-            this.uiDatePickerEnd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.uiDatePickerEnd.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiDatePickerEnd.ForeColor = System.Drawing.Color.White;
-            this.uiDatePickerEnd.Location = new System.Drawing.Point(999, 9);
-            this.uiDatePickerEnd.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.uiDatePickerEnd.MaxLength = 10;
-            this.uiDatePickerEnd.MinimumSize = new System.Drawing.Size(63, 0);
-            this.uiDatePickerEnd.Name = "uiDatePickerEnd";
-            this.uiDatePickerEnd.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            this.uiDatePickerEnd.RectColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.uiDatePickerEnd.RectSize = 2;
-            this.uiDatePickerEnd.Size = new System.Drawing.Size(150, 29);
-            this.uiDatePickerEnd.SymbolDropDown = 61555;
-            this.uiDatePickerEnd.SymbolNormal = 61555;
-            this.uiDatePickerEnd.SymbolSize = 24;
-            this.uiDatePickerEnd.TabIndex = 6;
-            this.uiDatePickerEnd.Text = "2024-07-16";
-            this.uiDatePickerEnd.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            this.uiDatePickerEnd.Value = new System.DateTime(2024, 7, 16, 0, 0, 0, 0);
-            this.uiDatePickerEnd.Visible = false;
-            this.uiDatePickerEnd.Watermark = "";
+            this.tipLable.BackColor = System.Drawing.Color.Transparent;
+            this.tipLable.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.tipLable.ForeColor = System.Drawing.Color.Red;
+            this.tipLable.Location = new System.Drawing.Point(938, 11);
+            this.tipLable.Name = "tipLable";
+            this.tipLable.Size = new System.Drawing.Size(123, 23);
+            this.tipLable.TabIndex = 7;
+            this.tipLable.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // uiButton_query
             // 
@@ -159,7 +280,7 @@
             this.uiButton_query.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
             this.uiButton_query.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiButton_query.ForeColor = System.Drawing.Color.Black;
-            this.uiButton_query.Location = new System.Drawing.Point(565, 3);
+            this.uiButton_query.Location = new System.Drawing.Point(801, 3);
             this.uiButton_query.MinimumSize = new System.Drawing.Size(1, 1);
             this.uiButton_query.Name = "uiButton_query";
             this.uiButton_query.RectSize = 2;
@@ -193,19 +314,6 @@
             this.uiDatePickerStart.Value = new System.DateTime(2024, 7, 16, 0, 0, 0, 0);
             this.uiDatePickerStart.Watermark = "";
             // 
-            // uiLabel2
-            // 
-            this.uiLabel2.BackColor = System.Drawing.Color.Transparent;
-            this.uiLabel2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiLabel2.ForeColor = System.Drawing.Color.Transparent;
-            this.uiLabel2.Location = new System.Drawing.Point(903, 11);
-            this.uiLabel2.Name = "uiLabel2";
-            this.uiLabel2.Size = new System.Drawing.Size(78, 23);
-            this.uiLabel2.TabIndex = 3;
-            this.uiLabel2.Text = "结束时间";
-            this.uiLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.uiLabel2.Visible = false;
-            // 
             // uiLabel1
             // 
             this.uiLabel1.BackColor = System.Drawing.Color.Transparent;
@@ -217,6 +325,44 @@
             this.uiLabel1.TabIndex = 2;
             this.uiLabel1.Text = "开始时间";
             this.uiLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // uiDatePickerEnd
+            // 
+            this.uiDatePickerEnd.BackColor = System.Drawing.Color.Transparent;
+            this.uiDatePickerEnd.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
+            this.uiDatePickerEnd.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiDatePickerEnd.ForeColor = System.Drawing.Color.White;
+            this.uiDatePickerEnd.Location = new System.Drawing.Point(25, 223);
+            this.uiDatePickerEnd.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiDatePickerEnd.MaxLength = 10;
+            this.uiDatePickerEnd.MinimumSize = new System.Drawing.Size(63, 0);
+            this.uiDatePickerEnd.Name = "uiDatePickerEnd";
+            this.uiDatePickerEnd.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
+            this.uiDatePickerEnd.RectColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.uiDatePickerEnd.RectSize = 2;
+            this.uiDatePickerEnd.Size = new System.Drawing.Size(150, 29);
+            this.uiDatePickerEnd.SymbolDropDown = 61555;
+            this.uiDatePickerEnd.SymbolNormal = 61555;
+            this.uiDatePickerEnd.SymbolSize = 24;
+            this.uiDatePickerEnd.TabIndex = 6;
+            this.uiDatePickerEnd.Text = "2024-07-16";
+            this.uiDatePickerEnd.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiDatePickerEnd.Value = new System.DateTime(2024, 7, 16, 0, 0, 0, 0);
+            this.uiDatePickerEnd.Visible = false;
+            this.uiDatePickerEnd.Watermark = "";
+            // 
+            // uiLabel2
+            // 
+            this.uiLabel2.BackColor = System.Drawing.Color.Transparent;
+            this.uiLabel2.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiLabel2.ForeColor = System.Drawing.Color.Transparent;
+            this.uiLabel2.Location = new System.Drawing.Point(22, 267);
+            this.uiLabel2.Name = "uiLabel2";
+            this.uiLabel2.Size = new System.Drawing.Size(78, 23);
+            this.uiLabel2.TabIndex = 3;
+            this.uiLabel2.Text = "结束时间";
+            this.uiLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLabel2.Visible = false;
             // 
             // uiPanel2
             // 
@@ -231,7 +377,7 @@
             this.uiPanel2.Name = "uiPanel2";
             this.uiPanel2.RectColor = System.Drawing.Color.Transparent;
             this.uiPanel2.RectSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.None;
-            this.uiPanel2.Size = new System.Drawing.Size(250, 692);
+            this.uiPanel2.Size = new System.Drawing.Size(250, 802);
             this.uiPanel2.TabIndex = 1;
             this.uiPanel2.Text = "uiPanel2";
             this.uiPanel2.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
@@ -245,7 +391,7 @@
             this.listView_VehicleData.HideSelection = false;
             this.listView_VehicleData.Location = new System.Drawing.Point(0, 0);
             this.listView_VehicleData.Name = "listView_VehicleData";
-            this.listView_VehicleData.Size = new System.Drawing.Size(250, 692);
+            this.listView_VehicleData.Size = new System.Drawing.Size(250, 802);
             this.listView_VehicleData.TabIndex = 0;
             this.listView_VehicleData.UseCompatibleStateImageBehavior = false;
             this.listView_VehicleData.MouseClick += new System.Windows.Forms.MouseEventHandler(this.ListView_VehicleData_MouseClick);
@@ -254,6 +400,8 @@
             // 
             this.uiPanel3.BackColor = System.Drawing.Color.Transparent;
             this.uiPanel3.Controls.Add(this.panel1);
+            this.uiPanel3.Controls.Add(this.uiDatePickerEnd);
+            this.uiPanel3.Controls.Add(this.uiLabel2);
             this.uiPanel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.uiPanel3.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
             this.uiPanel3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
@@ -264,7 +412,7 @@
             this.uiPanel3.Name = "uiPanel3";
             this.uiPanel3.RadiusSides = Sunny.UI.UICornerRadiusSides.None;
             this.uiPanel3.RectColor = System.Drawing.Color.Transparent;
-            this.uiPanel3.Size = new System.Drawing.Size(926, 692);
+            this.uiPanel3.Size = new System.Drawing.Size(1293, 802);
             this.uiPanel3.Style = Sunny.UI.UIStyle.Custom;
             this.uiPanel3.TabIndex = 2;
             this.uiPanel3.Text = "uiPanel3";
@@ -273,6 +421,7 @@
             // panel1
             // 
             this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
+            this.panel1.Controls.Add(this.uiLabel5);
             this.panel1.Controls.Add(this.label2);
             this.panel1.Controls.Add(this.op_image_next_btn);
             this.panel1.Controls.Add(this.op_image_preview_btn);
@@ -281,10 +430,22 @@
             this.panel1.Controls.Add(this.ir_Image_preview_btn);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.panel1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
-            this.panel1.Location = new System.Drawing.Point(0, 644);
+            this.panel1.Location = new System.Drawing.Point(0, 754);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(926, 48);
+            this.panel1.Size = new System.Drawing.Size(1293, 48);
             this.panel1.TabIndex = 0;
+            // 
+            // uiLabel5
+            // 
+            this.uiLabel5.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiLabel5.ForeColor = System.Drawing.Color.White;
+            this.uiLabel5.Location = new System.Drawing.Point(345, 13);
+            this.uiLabel5.Name = "uiLabel5";
+            this.uiLabel5.Size = new System.Drawing.Size(100, 23);
+            this.uiLabel5.TabIndex = 6;
+            this.uiLabel5.Text = "uiLabel5";
+            this.uiLabel5.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLabel5.Visible = false;
             // 
             // label2
             // 
@@ -374,11 +535,56 @@
             this.ir_Image_preview_btn.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.ir_Image_preview_btn.Click += new System.EventHandler(this.Ir_Image_preview_btn_Click);
             // 
+            // uiToolTip1
+            // 
+            this.uiToolTip1.AutoPopDelay = 5000;
+            this.uiToolTip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(54)))), ((int)(((byte)(54)))), ((int)(((byte)(54)))));
+            this.uiToolTip1.Font = new System.Drawing.Font("微软雅黑", 12F);
+            this.uiToolTip1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.uiToolTip1.InitialDelay = 100;
+            this.uiToolTip1.OwnerDraw = true;
+            this.uiToolTip1.RectColor = System.Drawing.Color.Transparent;
+            this.uiToolTip1.ReshowDelay = 10;
+            // 
+            // uiLabel3
+            // 
+            this.uiLabel3.BackColor = System.Drawing.Color.Transparent;
+            this.uiLabel3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiLabel3.ForeColor = System.Drawing.Color.White;
+            this.uiLabel3.Location = new System.Drawing.Point(534, 11);
+            this.uiLabel3.Name = "uiLabel3";
+            this.uiLabel3.Size = new System.Drawing.Size(80, 23);
+            this.uiLabel3.TabIndex = 27;
+            this.uiLabel3.Text = "数据类型";
+            this.uiLabel3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // uiComboBox_dataType
+            // 
+            this.uiComboBox_dataType.DataSource = null;
+            this.uiComboBox_dataType.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
+            this.uiComboBox_dataType.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiComboBox_dataType.ForeColor = System.Drawing.Color.White;
+            this.uiComboBox_dataType.ItemHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(155)))), ((int)(((byte)(200)))), ((int)(((byte)(255)))));
+            this.uiComboBox_dataType.ItemSelectForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(243)))), ((int)(((byte)(255)))));
+            this.uiComboBox_dataType.Location = new System.Drawing.Point(621, 5);
+            this.uiComboBox_dataType.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiComboBox_dataType.MinimumSize = new System.Drawing.Size(63, 0);
+            this.uiComboBox_dataType.Name = "uiComboBox_dataType";
+            this.uiComboBox_dataType.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
+            this.uiComboBox_dataType.RectColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.uiComboBox_dataType.RectSize = 2;
+            this.uiComboBox_dataType.Size = new System.Drawing.Size(150, 29);
+            this.uiComboBox_dataType.SymbolSize = 24;
+            this.uiComboBox_dataType.TabIndex = 28;
+            this.uiComboBox_dataType.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiComboBox_dataType.Watermark = "";
+            this.uiComboBox_dataType.SelectedIndexChanged += new System.EventHandler(this.UiComboBox_dataType_SelectedIndexChanged);
+            // 
             // FormVehicleData
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.ClientSize = new System.Drawing.Size(1176, 741);
+            this.ClientSize = new System.Drawing.Size(1543, 851);
             this.Controls.Add(this.uiPanel3);
             this.Controls.Add(this.uiPanel2);
             this.Controls.Add(this.uiPanel1);
@@ -386,6 +592,7 @@
             this.Name = "FormVehicleData";
             this.Text = "FormVehicleData";
             this.Load += new System.EventHandler(this.FormVehicleData_Load);
+            this.Leave += new System.EventHandler(this.FormVehicleData_Leave);
             this.uiPanel1.ResumeLayout(false);
             this.uiPanel2.ResumeLayout(false);
             this.uiPanel3.ResumeLayout(false);
@@ -417,8 +624,17 @@
         private Sunny.UI.UIImageButton op_image_next_btn;
         private Sunny.UI.UIImageButton op_image_preview_btn;
         private System.Windows.Forms.Label label1;
-        private Sunny.UI.UILabel uiLabel3;
+        private Sunny.UI.UILabel tipLable;
         private Sunny.UI.UIComboBox uiComboBox_DeviceName;
         private Sunny.UI.UILabel uiLabel4;
+        private Sunny.UI.UILabel uiLabel5;
+        private Sunny.UI.UISymbolButton deleteAllDrawBtn;
+        private Sunny.UI.UISymbolButton drawCircleBtn;
+        private Sunny.UI.UISymbolButton drawRectBtn;
+        private Sunny.UI.UISymbolButton mouseFollowBtn;
+        private Sunny.UI.UISymbolButton line_Btn;
+        private Sunny.UI.UIToolTip uiToolTip1;
+        private Sunny.UI.UIComboBox uiComboBox_dataType;
+        private Sunny.UI.UILabel uiLabel3;
     }
 }

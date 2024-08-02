@@ -24,6 +24,7 @@ namespace PreviewDemo
         /// </summary>
         [XmlElement(ElementName = "是否报警")]
         public string isAlarm = "";
+
     }
 
     public class IndexListInfo

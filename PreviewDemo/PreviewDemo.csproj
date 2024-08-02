@@ -184,6 +184,7 @@
     <Compile Include="SystemParam.cs" />
     <Compile Include="TicksTimeConvert.cs" />
     <Compile Include="TrainIndex.cs" />
+    <Compile Include="TrainInfo.cs" />
     <Compile Include="UserControl1.cs">
       <SubType>UserControl</SubType>
     </Compile>

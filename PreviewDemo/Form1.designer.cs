@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.Windows.Forms.Timer timer2;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.closePictureBox2 = new System.Windows.Forms.PictureBox();
@@ -40,12 +41,20 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.timer3 = new System.Windows.Forms.Timer(this.components);
             this.uiToolTip1 = new Sunny.UI.UIToolTip(this.components);
+            this.serialPort1 = new System.IO.Ports.SerialPort(this.components);
+            timer2 = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.closePictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).BeginInit();
             this.uiNavBar1.SuspendLayout();
             this.uiTabControl1.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // timer2
+            // 
+            timer2.Enabled = true;
+            timer2.Interval = 60000;
+            timer2.Tick += new System.EventHandler(this.Timer2_Tick);
             // 
             // pictureBox1
             // 
@@ -131,15 +140,15 @@
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Size = new System.Drawing.Size(1235, 811);
             this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "tabPage1";
+            this.tabPage1.Text = "f";
             this.tabPage1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.TabPage1_MouseDown);
             // 
             // tabPage2
             // 
             this.tabPage2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.tabPage2.Location = new System.Drawing.Point(0, 0);
+            this.tabPage2.Location = new System.Drawing.Point(0, 40);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Size = new System.Drawing.Size(1235, 811);
+            this.tabPage2.Size = new System.Drawing.Size(200, 60);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "tabPage2";
             // 
@@ -163,6 +172,13 @@
             this.uiToolTip1.OwnerDraw = true;
             this.uiToolTip1.RectColor = System.Drawing.Color.Transparent;
             this.uiToolTip1.ReshowDelay = 10;
+            // 
+            // serialPort1
+            // 
+            this.serialPort1.BaudRate = 115200;
+            this.serialPort1.ReadTimeout = 5;
+            this.serialPort1.ErrorReceived += new System.IO.Ports.SerialErrorReceivedEventHandler(this.SerialPort1_ErrorReceived);
+            this.serialPort1.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(this.SerialPort1_DataReceived);
             // 
             // Form1
             // 
@@ -203,5 +219,6 @@
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Timer timer3;
         private Sunny.UI.UIToolTip uiToolTip1;
+        private System.IO.Ports.SerialPort serialPort1;
     }
 }

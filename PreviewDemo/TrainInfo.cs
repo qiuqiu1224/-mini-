@@ -27,7 +27,14 @@ namespace PreviewDemo
         [XmlElement(Type = typeof(byte[]), ElementName = "轴距")]
         public byte[] axleDistance = new byte[32];
 
+        [XmlElement(Type = typeof(UInt16), ElementName = "总辆数")]
+        public UInt16 carCount;
 
+        [XmlElement(Type = typeof(int), ElementName = "机车数")]
+        public int locomotiveCount;
+
+        [XmlElement(Type = typeof(int), ElementName = "总轴数")]
+        public int axleCount;
 
     }
     public class TrainListInfo

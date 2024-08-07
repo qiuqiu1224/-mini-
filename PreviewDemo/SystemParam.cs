@@ -12,6 +12,19 @@ namespace PreviewDemo
 
         public SystemParam() { }
 
+        //定位时是否包含机车
+        [XmlElement(Type = typeof(bool), ElementName = "IsContainLocomotive")]
+        public bool isContainLocomotive = false;
+
+        //定期删除文件间隔
+        [XmlElement(Type = typeof(int), ElementName = "DeleteFileInterval")]
+        public int deleteFileInterval = 7200000;
+
+
+        //设备数量
+        [XmlElement(Type = typeof(string), ElementName = "SavePath")]
+        public string savePath = "C:" + "\\" + "HIK";
+
         //设备数量
         [XmlElement(Type = typeof(string), ElementName = "StationName")]
         public string stationName = "三间房站";
@@ -72,8 +85,15 @@ namespace PreviewDemo
         [XmlElement(Type = typeof(float), ElementName = "Alarm_2")]
         public float alarm_1 = 100.0F;
 
+        // 报警温度
+        [XmlElement(Type = typeof(bool), ElementName = "ShowToolBox")]
+        public bool showToolBox = false;
+
         #endregion
 
+        // 保存记录时间
+        [XmlElement(Type = typeof(int), ElementName = "SaveDay")]
+        public int saveDay = 30;
 
         //#region 1# 左上
         ///// <summary>

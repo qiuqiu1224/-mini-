@@ -8,7 +8,7 @@
     <ProjectGuid>{668D631E-1765-4377-B87C-0E1DA15AF44D}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ApplicationIcon>App.ico</ApplicationIcon>
+    <ApplicationIcon>ic_launcher%281%29.ico</ApplicationIcon>
     <AssemblyKeyContainerName>
     </AssemblyKeyContainerName>
     <AssemblyName>PreviewDemo</AssemblyName>
@@ -96,6 +96,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\</OutputPath>
@@ -212,6 +213,7 @@
     <Compile Include="Preview.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Content Include="ic_launcher%281%29.ico" />
     <EmbeddedResource Include="FAlarmData.resx">
       <DependentUpon>FAlarmData.cs</DependentUpon>
     </EmbeddedResource>

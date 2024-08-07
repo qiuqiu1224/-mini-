@@ -31,6 +31,8 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormVehicleData));
             this.uiPanel1 = new Sunny.UI.UIPanel();
+            this.uiComboBox_dataType = new Sunny.UI.UIComboBox();
+            this.uiLabel3 = new Sunny.UI.UILabel();
             this.deleteAllDrawBtn = new Sunny.UI.UISymbolButton();
             this.drawCircleBtn = new Sunny.UI.UISymbolButton();
             this.drawRectBtn = new Sunny.UI.UISymbolButton();
@@ -56,8 +58,6 @@
             this.ir_image_next_btn = new Sunny.UI.UIImageButton();
             this.ir_Image_preview_btn = new Sunny.UI.UIImageButton();
             this.uiToolTip1 = new Sunny.UI.UIToolTip(this.components);
-            this.uiLabel3 = new Sunny.UI.UILabel();
-            this.uiComboBox_dataType = new Sunny.UI.UIComboBox();
             this.uiPanel1.SuspendLayout();
             this.uiPanel2.SuspendLayout();
             this.uiPanel3.SuspendLayout();
@@ -98,6 +98,40 @@
             this.uiPanel1.Text = null;
             this.uiPanel1.TextAlignment = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // uiComboBox_dataType
+            // 
+            this.uiComboBox_dataType.DataSource = null;
+            this.uiComboBox_dataType.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
+            this.uiComboBox_dataType.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiComboBox_dataType.ForeColor = System.Drawing.Color.White;
+            this.uiComboBox_dataType.ItemHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(155)))), ((int)(((byte)(200)))), ((int)(((byte)(255)))));
+            this.uiComboBox_dataType.ItemSelectForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(243)))), ((int)(((byte)(255)))));
+            this.uiComboBox_dataType.Location = new System.Drawing.Point(621, 5);
+            this.uiComboBox_dataType.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.uiComboBox_dataType.MinimumSize = new System.Drawing.Size(63, 0);
+            this.uiComboBox_dataType.Name = "uiComboBox_dataType";
+            this.uiComboBox_dataType.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
+            this.uiComboBox_dataType.RectColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.uiComboBox_dataType.RectSize = 2;
+            this.uiComboBox_dataType.Size = new System.Drawing.Size(150, 29);
+            this.uiComboBox_dataType.SymbolSize = 24;
+            this.uiComboBox_dataType.TabIndex = 28;
+            this.uiComboBox_dataType.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiComboBox_dataType.Watermark = "";
+            this.uiComboBox_dataType.SelectedIndexChanged += new System.EventHandler(this.UiComboBox_dataType_SelectedIndexChanged);
+            // 
+            // uiLabel3
+            // 
+            this.uiLabel3.BackColor = System.Drawing.Color.Transparent;
+            this.uiLabel3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiLabel3.ForeColor = System.Drawing.Color.White;
+            this.uiLabel3.Location = new System.Drawing.Point(534, 11);
+            this.uiLabel3.Name = "uiLabel3";
+            this.uiLabel3.Size = new System.Drawing.Size(80, 23);
+            this.uiLabel3.TabIndex = 27;
+            this.uiLabel3.Text = "数据类型";
+            this.uiLabel3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // deleteAllDrawBtn
             // 
             this.deleteAllDrawBtn.BackColor = System.Drawing.Color.Transparent;
@@ -122,6 +156,8 @@
             this.deleteAllDrawBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.deleteAllDrawBtn.TipsText = "停止采集";
             this.deleteAllDrawBtn.Click += new System.EventHandler(this.DeleteAllDrawBtn_Click);
+            this.deleteAllDrawBtn.MouseLeave += new System.EventHandler(this.DeleteAllDrawBtn_MouseLeave);
+            this.deleteAllDrawBtn.MouseHover += new System.EventHandler(this.DeleteAllDrawBtn_MouseHover);
             // 
             // drawCircleBtn
             // 
@@ -545,40 +581,6 @@
             this.uiToolTip1.OwnerDraw = true;
             this.uiToolTip1.RectColor = System.Drawing.Color.Transparent;
             this.uiToolTip1.ReshowDelay = 10;
-            // 
-            // uiLabel3
-            // 
-            this.uiLabel3.BackColor = System.Drawing.Color.Transparent;
-            this.uiLabel3.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiLabel3.ForeColor = System.Drawing.Color.White;
-            this.uiLabel3.Location = new System.Drawing.Point(534, 11);
-            this.uiLabel3.Name = "uiLabel3";
-            this.uiLabel3.Size = new System.Drawing.Size(80, 23);
-            this.uiLabel3.TabIndex = 27;
-            this.uiLabel3.Text = "数据类型";
-            this.uiLabel3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // uiComboBox_dataType
-            // 
-            this.uiComboBox_dataType.DataSource = null;
-            this.uiComboBox_dataType.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
-            this.uiComboBox_dataType.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.uiComboBox_dataType.ForeColor = System.Drawing.Color.White;
-            this.uiComboBox_dataType.ItemHoverColor = System.Drawing.Color.FromArgb(((int)(((byte)(155)))), ((int)(((byte)(200)))), ((int)(((byte)(255)))));
-            this.uiComboBox_dataType.ItemSelectForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(235)))), ((int)(((byte)(243)))), ((int)(((byte)(255)))));
-            this.uiComboBox_dataType.Location = new System.Drawing.Point(621, 5);
-            this.uiComboBox_dataType.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.uiComboBox_dataType.MinimumSize = new System.Drawing.Size(63, 0);
-            this.uiComboBox_dataType.Name = "uiComboBox_dataType";
-            this.uiComboBox_dataType.Padding = new System.Windows.Forms.Padding(0, 0, 30, 2);
-            this.uiComboBox_dataType.RectColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.uiComboBox_dataType.RectSize = 2;
-            this.uiComboBox_dataType.Size = new System.Drawing.Size(150, 29);
-            this.uiComboBox_dataType.SymbolSize = 24;
-            this.uiComboBox_dataType.TabIndex = 28;
-            this.uiComboBox_dataType.TextAlignment = System.Drawing.ContentAlignment.MiddleLeft;
-            this.uiComboBox_dataType.Watermark = "";
-            this.uiComboBox_dataType.SelectedIndexChanged += new System.EventHandler(this.UiComboBox_dataType_SelectedIndexChanged);
             // 
             // FormVehicleData
             // 

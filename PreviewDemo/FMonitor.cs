@@ -77,5 +77,10 @@ namespace PreviewDemo
             //listView_trainInfo.Height = 100;
 
         }
+
+        private void FMonitor_Initialize(object sender, EventArgs e)
+        {
+
+        }
     }
 }

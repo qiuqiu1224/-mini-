@@ -28,7 +28,7 @@ namespace PreviewDemo
 
         public static string systemXml = Application.StartupPath + "\\SystemSetting.xml";
 
-        public static string RootSavePath = "C:" + "\\" + "HIK";
+        public static string RootSavePath = Application.StartupPath + "\\" + "Report";
 
         const Int32 TEMP_WIDTH = 640;//红外图像宽度
         const Int32 TEMP_HEIGHT = 512;//红外图像宽度
@@ -233,7 +233,7 @@ namespace PreviewDemo
         }
 
         /// <summary>
-        /// 在可见光图像文件夹内选区与红外图像时间戳前后500ms以后的图像
+        /// 在可见光图像文件夹内选取与红外图像时间戳前后500ms的图像
         /// </summary>
         /// <param name="irImageName"></param>
         /// <param name="opImagePaths"></param>
@@ -267,6 +267,13 @@ namespace PreviewDemo
             return imagePaths;
         }
 
+        /// <summary>
+        /// 将一维温度数组转化为二维数组
+        /// </summary>
+        /// <param name="temp"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <returns></returns>
         public static float[,] ChangeTempToArray(float[] temp, int width, int height)
         {
             float[,] realTemps = new float[width, height];
@@ -308,6 +315,42 @@ namespace PreviewDemo
             g.DrawLine(pen, startX, startY, startX - lineLength, startY);
             g.DrawLine(pen, startX, startY, startX, startY + lineLength);
             g.DrawLine(pen, startX, startY, startX, startY - lineLength);
+        }
+
+        public static void DeleteFile(string fileDirect, int saveDay)
+        {
+            DateTime nowTime = DateTime.Now;
+            string[] files = Directory.GetFiles(fileDirect, ".", SearchOption.AllDirectories); //获取该目录下所有文件
+            foreach (string file in files)
+            {
+                FileInfo fileInfo = new FileInfo(file);
+                TimeSpan t = nowTime - fileInfo.CreationTime; //当前时间 减去 文件创建时间
+                int day = t.Days;
+                if (day > saveDay) //保存的时间 ； 单位：天
+                {
+                    File.Delete(file); //删除超过时间的文件
+                }
+            }
+        }
+
+        public static void DeleteDirectory(string fileDirect, int saveDay)
+        {
+            DateTime nowTime = DateTime.Now;
+            DirectoryInfo root = new DirectoryInfo(fileDirect);
+            DirectoryInfo[] dics = root.GetDirectories();//获取文件夹
+            FileAttributes attr = File.GetAttributes(fileDirect);
+            if (attr == FileAttributes.Directory)//判断是不是文件夹
+            {
+                foreach (DirectoryInfo file in dics)//遍历文件夹
+                {
+                    TimeSpan t = nowTime - file.CreationTime; //当前时间 减去 文件创建时间
+                    int day = t.Days;
+                    if (day > saveDay) //保存的时间 ； 单位：天
+                    {
+                        Directory.Delete(file.FullName, true); //删除超过时间的文件夹
+                    }
+                }
+            }
         }
 
     }

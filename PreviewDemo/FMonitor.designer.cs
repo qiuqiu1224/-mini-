@@ -32,14 +32,14 @@
             this.uiPanel1 = new Sunny.UI.UIPanel();
             this.deleteAllDrawBtn = new Sunny.UI.UISymbolButton();
             this.drawCircleBtn = new Sunny.UI.UISymbolButton();
+            this.stopPrewviewBtn = new Sunny.UI.UISymbolButton();
             this.drawRectBtn = new Sunny.UI.UISymbolButton();
+            this.startPrewviewBtn = new Sunny.UI.UISymbolButton();
             this.takePicBtn = new Sunny.UI.UISymbolButton();
             this.uiSymbolButton2 = new Sunny.UI.UISymbolButton();
             this.mouseFollowBtn = new Sunny.UI.UISymbolButton();
             this.stopRecordBtn = new Sunny.UI.UISymbolButton();
             this.startRecordBtn = new Sunny.UI.UISymbolButton();
-            this.stopPrewviewBtn = new Sunny.UI.UISymbolButton();
-            this.startPrewviewBtn = new Sunny.UI.UISymbolButton();
             this.listView_trainInfo = new System.Windows.Forms.ListView();
             this.uiSplitContainer1 = new Sunny.UI.UISplitContainer();
             this.uiLabel1 = new Sunny.UI.UILabel();
@@ -64,7 +64,7 @@
             this.uiPanel1.Controls.Add(this.stopRecordBtn);
             this.uiPanel1.Controls.Add(this.startRecordBtn);
             this.uiPanel1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.uiPanel1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
+            this.uiPanel1.FillColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(53)))));
             this.uiPanel1.FillColor2 = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
             this.uiPanel1.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiPanel1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
@@ -106,6 +106,7 @@
             this.deleteAllDrawBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.deleteAllDrawBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.deleteAllDrawBtn.TipsText = "停止采集";
+            this.deleteAllDrawBtn.Visible = false;
             // 
             // drawCircleBtn
             // 
@@ -130,6 +131,33 @@
             this.drawCircleBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.drawCircleBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.drawCircleBtn.TipsText = "停止采集";
+            this.drawCircleBtn.Visible = false;
+            // 
+            // stopPrewviewBtn
+            // 
+            this.stopPrewviewBtn.BackColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.stopPrewviewBtn.FillColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.stopPrewviewBtn.ForeColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.Image = ((System.Drawing.Image)(resources.GetObject("stopPrewviewBtn.Image")));
+            this.stopPrewviewBtn.LightColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.Location = new System.Drawing.Point(141, 8);
+            this.stopPrewviewBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
+            this.stopPrewviewBtn.MinimumSize = new System.Drawing.Size(1, 1);
+            this.stopPrewviewBtn.Name = "stopPrewviewBtn";
+            this.stopPrewviewBtn.RectColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.RectHoverColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.RectPressColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.RectSelectedColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.Size = new System.Drawing.Size(30, 35);
+            this.stopPrewviewBtn.SymbolColor = System.Drawing.Color.Transparent;
+            this.stopPrewviewBtn.TabIndex = 1;
+            this.stopPrewviewBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.stopPrewviewBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.stopPrewviewBtn.TipsText = "停止采集";
+            this.stopPrewviewBtn.Visible = false;
+            this.stopPrewviewBtn.Click += new System.EventHandler(this.StopPrewviewBtn_Click);
             // 
             // drawRectBtn
             // 
@@ -154,7 +182,34 @@
             this.drawRectBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.drawRectBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.drawRectBtn.TipsText = "停止采集";
+            this.drawRectBtn.Visible = false;
             this.drawRectBtn.Click += new System.EventHandler(this.DrawRectBtn_Click);
+            // 
+            // startPrewviewBtn
+            // 
+            this.startPrewviewBtn.BackColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.startPrewviewBtn.FillColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.startPrewviewBtn.ForeColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.Image = ((System.Drawing.Image)(resources.GetObject("startPrewviewBtn.Image")));
+            this.startPrewviewBtn.LightColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.Location = new System.Drawing.Point(107, 8);
+            this.startPrewviewBtn.MinimumSize = new System.Drawing.Size(1, 1);
+            this.startPrewviewBtn.Name = "startPrewviewBtn";
+            this.startPrewviewBtn.RectColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.RectHoverColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.RectPressColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.RectSelectedColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.Size = new System.Drawing.Size(30, 35);
+            this.startPrewviewBtn.SymbolColor = System.Drawing.Color.Transparent;
+            this.startPrewviewBtn.TabIndex = 0;
+            this.startPrewviewBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.startPrewviewBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.startPrewviewBtn.TipsForeColor = System.Drawing.Color.Maroon;
+            this.startPrewviewBtn.TipsText = "开始采集";
+            this.startPrewviewBtn.Visible = false;
+            this.startPrewviewBtn.Click += new System.EventHandler(this.StartPrewviewBtn_Click);
             // 
             // takePicBtn
             // 
@@ -179,6 +234,7 @@
             this.takePicBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.takePicBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.takePicBtn.TipsText = "停止采集";
+            this.takePicBtn.Visible = false;
             // 
             // uiSymbolButton2
             // 
@@ -203,6 +259,7 @@
             this.uiSymbolButton2.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.uiSymbolButton2.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiSymbolButton2.TipsText = "停止采集";
+            this.uiSymbolButton2.Visible = false;
             // 
             // mouseFollowBtn
             // 
@@ -227,6 +284,7 @@
             this.mouseFollowBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
             this.mouseFollowBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.mouseFollowBtn.TipsText = "停止采集";
+            this.mouseFollowBtn.Visible = false;
             this.mouseFollowBtn.Click += new System.EventHandler(this.MouseFollowBtn_Click);
             // 
             // stopRecordBtn
@@ -277,56 +335,6 @@
             this.startRecordBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.startRecordBtn.TipsText = "停止采集";
             this.startRecordBtn.Click += new System.EventHandler(this.StartRecordBtn_Click);
-            // 
-            // stopPrewviewBtn
-            // 
-            this.stopPrewviewBtn.BackColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.stopPrewviewBtn.FillColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.stopPrewviewBtn.ForeColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.Image = ((System.Drawing.Image)(resources.GetObject("stopPrewviewBtn.Image")));
-            this.stopPrewviewBtn.LightColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.Location = new System.Drawing.Point(141, 8);
-            this.stopPrewviewBtn.Margin = new System.Windows.Forms.Padding(10, 3, 3, 3);
-            this.stopPrewviewBtn.MinimumSize = new System.Drawing.Size(1, 1);
-            this.stopPrewviewBtn.Name = "stopPrewviewBtn";
-            this.stopPrewviewBtn.RectColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.RectHoverColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.RectPressColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.RectSelectedColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.Size = new System.Drawing.Size(30, 35);
-            this.stopPrewviewBtn.SymbolColor = System.Drawing.Color.Transparent;
-            this.stopPrewviewBtn.TabIndex = 1;
-            this.stopPrewviewBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.stopPrewviewBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.stopPrewviewBtn.TipsText = "停止采集";
-            this.stopPrewviewBtn.Click += new System.EventHandler(this.StopPrewviewBtn_Click);
-            // 
-            // startPrewviewBtn
-            // 
-            this.startPrewviewBtn.BackColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.startPrewviewBtn.FillColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.startPrewviewBtn.ForeColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.Image = ((System.Drawing.Image)(resources.GetObject("startPrewviewBtn.Image")));
-            this.startPrewviewBtn.LightColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.Location = new System.Drawing.Point(107, 8);
-            this.startPrewviewBtn.MinimumSize = new System.Drawing.Size(1, 1);
-            this.startPrewviewBtn.Name = "startPrewviewBtn";
-            this.startPrewviewBtn.RectColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.RectHoverColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.RectPressColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.RectSelectedColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.Size = new System.Drawing.Size(30, 35);
-            this.startPrewviewBtn.SymbolColor = System.Drawing.Color.Transparent;
-            this.startPrewviewBtn.TabIndex = 0;
-            this.startPrewviewBtn.TipsColor = System.Drawing.Color.FromArgb(((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
-            this.startPrewviewBtn.TipsFont = new System.Drawing.Font("宋体", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.startPrewviewBtn.TipsForeColor = System.Drawing.Color.Maroon;
-            this.startPrewviewBtn.TipsText = "开始采集";
-            this.startPrewviewBtn.Click += new System.EventHandler(this.StartPrewviewBtn_Click);
             // 
             // listView_trainInfo
             // 
@@ -383,9 +391,11 @@
             this.ClientSize = new System.Drawing.Size(1325, 858);
             this.Controls.Add(this.uiSplitContainer1);
             this.Controls.Add(this.uiPanel1);
+            this.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(31)))), ((int)(((byte)(36)))));
             this.Name = "FMonitor";
             this.Style = Sunny.UI.UIStyle.Custom;
             this.Text = "FormMonitor";
+            this.Initialize += new System.EventHandler(this.FMonitor_Initialize);
             this.uiPanel1.ResumeLayout(false);
             this.uiSplitContainer1.Panel1.ResumeLayout(false);
             this.uiSplitContainer1.Panel2.ResumeLayout(false);
